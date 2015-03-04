@@ -48,7 +48,7 @@ object WizardForm: TWizardForm
     Top = 359
     Width = 58
     Height = 13
-    Anchors = [akLeft, akBottom]
+    Anchors = [akRight, akBottom]
     Caption = 'Class name:'
   end
   object Label2: TLabel
@@ -63,6 +63,7 @@ object WizardForm: TWizardForm
     Top = 40
     Width = 56
     Height = 13
+    Anchors = [akTop, akRight]
     Caption = 'DTO source'
   end
   object ButtonImport: TButton
@@ -122,7 +123,7 @@ object WizardForm: TWizardForm
     Top = 357
     Width = 169
     Height = 20
-    Anchors = [akLeft, akBottom]
+    Anchors = [akRight, akBottom]
     Ctl3D = False
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText

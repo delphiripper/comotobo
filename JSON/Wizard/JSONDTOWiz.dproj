@@ -95,9 +95,9 @@
             <Form>WizardForm</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="..\JSON.pas"/>
         <DCCReference Include="..\JSON2DTO.pas"/>
         <DCCReference Include="..\WinHttp_TLB.pas"/>
+        <DCCReference Include="..\JSON.pas"/>
         <RcCompile Include="JSON.rc">
             <Form>XPAPPRES.res</Form>
         </RcCompile>

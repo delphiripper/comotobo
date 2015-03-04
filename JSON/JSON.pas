@@ -49,6 +49,8 @@
   Changes:
 
   v1.0 2014-08-09 * first version
+  v1.1 2015-03-04 * TJSONParser.IsDateTime() added
+                  * Indy HTTP replaced by WinHttp (allows automatic windows authentication)
 
 }
 unit JSON;
@@ -443,23 +445,6 @@ begin
 end;
 
 class function TJSON.Get(const URL: string): String;
-//var
-//  HTTP: TIdHTTP;
-//  Response: TStringStream;
-//begin
-//  HTTP := TIdHTTP.Create(nil);
-//  Response := TStringStream.Create;
-//  Try
-//    HTTP.Request.Accept := 'application/json';
-//    HTTP.Get( URL, Response );
-//    if HTTP.ResponseCode <> 200 then
-//      raise JSONException.Create('HTTP result was ' + inttostr( HTTP.ResponseCode ));
-//    Result := Response.DataString;
-//  Finally
-//    HTTP.Free;
-//    Response.Free;
-//  End;
-//end;
 var
   HTTPResult: Integer;
   Response: TStringStream;

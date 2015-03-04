@@ -131,17 +131,9 @@ begin
 end;
 
 procedure TForm1.Button1Click(Sender: TObject);
-var
-  DTO: TDTOGenerator;
 begin
   Memo1.Clear;
-  DTO := TDTOGenerator.Create;
-  Try
-    DTO.Parse( 'Imported', MemoJSON.Text );
-    DTO.WritePDO( 'Imported', Memo1.Lines, '' );
-  Finally
-    DTO.Free;
-  End;
+  TDTOGenerator.Parse( MemoJSON.Text, 'Imported', 'DTO.Imported', Memo1.Lines, '' );
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
@@ -170,6 +162,7 @@ var
 begin
   MemoJSON.Text := TJSON.Get( 'http://itunes.apple.com/search?term=metallica' );
   //Pretty print
+  JSON := nil;
   Try
     JSON := TJSON.ParseText( MemoJSON.Text );
     MemoJSON.Text := JSON.ToJSON;
@@ -184,6 +177,7 @@ var
 begin
   MemoJSON.Text := TJSON.Get( 'http://lyrics.wikia.com/api.php?artist=Metallica&fmt=json' );
   //Pretty print
+  JSON := nil;
   Try
     JSON := TJSON.ParseText( MemoJSON.Text );
     MemoJSON.Text := JSON.ToJSON;
