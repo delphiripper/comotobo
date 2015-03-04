@@ -1,0 +1,38 @@
+program %s;
+
+uses
+  Forms;
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.Run;
+end.
+|unit %s;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs;
+
+type
+  T%s = class(T%s)
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  %1:s: T%1:s;
+
+implementation
+
+{$R *.dfm}
+
+
+end.
+|
+|
