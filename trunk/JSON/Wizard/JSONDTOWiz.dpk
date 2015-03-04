@@ -52,8 +52,8 @@ requires
 contains
   JSONDTOExpt in 'JSONDTOExpt.pas',
   WizardWin in 'WizardWin.pas' {WizardForm},
-  JSON in '..\JSON.pas',
   JSON2DTO in '..\JSON2DTO.pas',
-  WinHttp_TLB in '..\WinHttp_TLB.pas';
+  WinHttp_TLB in '..\WinHttp_TLB.pas',
+  JSON in '..\JSON.pas';
 
 end.

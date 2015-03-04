@@ -158,24 +158,16 @@ begin
 end;
 
 procedure TWizardForm.CheckValidJSON;
-var
-  DTOGen: TDTOGenerator;
 begin
   FDTOSource.Clear;
   ButtonImport.Enabled     := False;
   LabelInvalidJSON.Visible := True;
   if IsValidJSON then
   Try
-    DTOGen := TDTOGenerator.Create;
-    Try
-      DTOGen.Parse( EditName.Text, MemoJSON.Text );
-      DTOGen.WritePDO( EditName.Text, FDTOSource, FURL );
-      MemoSource.Lines.Assign( FDTOSource );
-      ButtonImport.Enabled     := True;
-      LabelInvalidJSON.Visible := False;
-    Finally
-      DTOGen.Free;
-    End;
+    TDTOGenerator.Parse( MemoJSON.Text, EditName.Text, 'DTO.' + EditName.Text, FDTOSource, FURL );
+    MemoSource.Lines.Assign( FDTOSource );
+    ButtonImport.Enabled     := True;
+    LabelInvalidJSON.Visible := False;
   Except
     On E: Exception do
       MemoSource.Lines.Text := E.Message;
