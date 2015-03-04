@@ -9,6 +9,8 @@
 // and is subject to that software license agreement.
 
 //---------------------------------------------------------------------------
+// JCL_DEBUG_EXPERT_GENERATEJDBG OFF
+// JCL_DEBUG_EXPERT_INSERTJDBG OFF
 package JSONDTOWiz;
 
 {$R *.res}
@@ -51,6 +53,7 @@ contains
   JSONDTOExpt in 'JSONDTOExpt.pas',
   WizardWin in 'WizardWin.pas' {WizardForm},
   JSON in '..\JSON.pas',
-  JSON2DTO in '..\JSON2DTO.pas';
+  JSON2DTO in '..\JSON2DTO.pas',
+  WinHttp_TLB in '..\WinHttp_TLB.pas';
 
 end.

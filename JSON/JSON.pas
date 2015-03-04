@@ -241,6 +241,7 @@ Type
     ///	  corresponding properties of Obj
     ///	</summary>
     Class Procedure Parse( JSON: String; Obj: TObject );
+    Class Function IsDateTime( Str: String ): Boolean;
   End;
 
   TListObjectDetails = Record
@@ -300,12 +301,70 @@ Procedure SerializeString(Const Str: String; S: TStringBuilder);
 implementation
 
 Uses
-  System.TypInfo, System.DateUtils, System.Types, System.Classes, IdHTTP;
+  System.TypInfo, System.DateUtils, System.Types, System.Classes, System.Variants, WinHttp_TLB,
+  Winapi.ActiveX, Vcl.AxCtrls;
 
 var
   Init: Boolean = False;
   ctx: TRttiContext;
   JSONFormat: TFormatSettings;
+
+Type
+  THTTPAccept = ( aDefault, aJSON, aXML );
+  THTTPRequestType = ( rGET, rPOST );
+
+Const
+  HTTPREQUEST_SETCREDENTIALS_FOR_SERVER = 0;
+  HTTPREQUEST_SETCREDENTIALS_FOR_PROXY  = 1;
+
+Function WinHTTP( RequestType: THTTPRequestType; URL, ADUserName, ADPassword: String; ResultStream: TStream;
+                  Accept: THTTPAccept = aDefault; ABodyText: String = ''; ContentType: THTTPAccept = aDefault ): Integer;
+const
+  RequestTypeStr: Array[THTTPRequestType] of string = ( 'GET', 'POST' );
+var
+  Http: IWinHttpRequest;
+  HttpStream: IStream;
+  OleStream: TOleStream;
+Begin
+  HttpStream := nil;
+  OleStream  := nil;
+  Http := CoWinHttpRequest.Create;
+  Try
+    Http.Open( RequestTypeStr[RequestType], URL, False );
+    if ADUserName <> '' then
+    Begin
+      Http.SetAutoLogonPolicy( AutoLogonPolicy_Never );
+      Http.SetCredentials( ADUserName, ADPassword, HTTPREQUEST_SETCREDENTIALS_FOR_SERVER );
+    End
+    Else
+      Http.SetAutoLogonPolicy( AutoLogonPolicy_Always );
+    Case Accept of
+      aJSON: Http.SetRequestHeader( 'accept', 'application/json' );
+      aXML : Http.SetRequestHeader( 'accept', 'application/xml' );
+    End;
+    case RequestType of
+      rGET: Http.Send(EmptyParam);
+      rPOST:
+        begin
+          case ContentType of
+            aJSON: Http.SetRequestHeader( 'Content-Type', 'application/json' );
+            aXML: Http.SetRequestHeader( 'Content-Type', 'application/xml' );
+          end;
+          Http.SetRequestHeader( 'Content-Length', IntToStr(Length(ABodyText)) );
+          Http.Send(ABodyText);
+        end;
+    end;
+    Result := Http.Status;
+    HttpStream := IUnknown(http.ResponseStream) as IStream;
+    OleStream  := TOleStream.Create(HttpStream);
+    OleStream.Position := 0;
+    ResultStream.CopyFrom( OleStream, OleStream.Size );
+  Finally
+    OleStream.Free;
+    HttpStream := nil;
+    Http := nil;
+  End;
+End;
 
 Procedure SerializeString(Const Str: String; S: TStringBuilder);
 var
@@ -384,20 +443,36 @@ begin
 end;
 
 class function TJSON.Get(const URL: string): String;
+//var
+//  HTTP: TIdHTTP;
+//  Response: TStringStream;
+//begin
+//  HTTP := TIdHTTP.Create(nil);
+//  Response := TStringStream.Create;
+//  Try
+//    HTTP.Request.Accept := 'application/json';
+//    HTTP.Get( URL, Response );
+//    if HTTP.ResponseCode <> 200 then
+//      raise JSONException.Create('HTTP result was ' + inttostr( HTTP.ResponseCode ));
+//    Result := Response.DataString;
+//  Finally
+//    HTTP.Free;
+//    Response.Free;
+//  End;
+//end;
 var
-  HTTP: TIdHTTP;
+  HTTPResult: Integer;
   Response: TStringStream;
 begin
-  HTTP := TIdHTTP.Create(nil);
-  Response := TStringStream.Create;
+  Response := TStringStream.Create( '', TEncoding.UTF8 );
   Try
-    HTTP.Request.Accept := 'application/json';
-    HTTP.Get( URL, Response );
-    if HTTP.ResponseCode <> 200 then
-      raise JSONException.Create('HTTP result was ' + inttostr( HTTP.ResponseCode ));
-    Result := Response.DataString;
+    HTTPResult := WinHTTP( rGET, URL, '', '', Response, aJSON );
+    if HTTPResult = 200 then
+      Result := Response.DataString
+    else
+      raise JSONException.Create( 'HTTP result for "' + URL + '" was ' + IntToStr( HTTPResult ) + ': ' +
+                                  Copy(Response.DataString,1,500));
   Finally
-    HTTP.Free;
     Response.Free;
   End;
 end;
@@ -981,6 +1056,32 @@ class function TJSONParser.IsBoolean(AType: TRttiType): Boolean;
 begin
   Result := (AType.TypeKind = tkEnumeration) and
             (AType.QualifiedName = 'System.Boolean');
+end;
+
+class function TJSONParser.IsDateTime(Str: String): Boolean;
+
+  Function CheckMask( Const S: String; Const Mask: String ): Boolean;
+  var
+    I: Integer;
+  Begin
+    Result := Length(s) = Length(Mask);
+    if Result then
+      for I := 1 to Length(s) do
+      Begin
+        if Mask[I] = '0' then
+          Result := CharInSet( S[I], ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ] )
+        Else
+          Result := S[I] = Mask[i];
+        if not Result then
+          Exit;
+      End;
+  End;
+
+begin
+  Result := CheckMask( Str, '0000-00-00T00:00:00Z' ) or
+            CheckMask( Str, '0000-00-00T00:00:00' ) or
+            CheckMask( Str, '0000-00-00Z' ) or
+            CheckMask( Str, '0000-00-00' );
 end;
 
 class function TJSONParser.IsDateType(AType: TRttiType): Boolean;
