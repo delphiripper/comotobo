@@ -83,7 +83,6 @@ Type
     FRoot: TDTO_Value;
     Function JSONTypeStr( Typ: TJSONtype ): String;
     Function WidenNumber( Current: TKind; Next: TJSON_Number ): TKind;
-    Function IsDatetime( S: String ): Boolean;
     Function PrettyName( AName: String ): String;
     Procedure ParseList(   JSON: TJSON_Array; List: TDTO_List );
     Procedure ParseObject( JSON: TJSON_Object; Obj: TDTO_Object );
@@ -114,11 +113,6 @@ begin
   FJSON.Free;
   FRoot.Free;
   inherited;
-end;
-
-function TDTOGenerator.IsDatetime(S: String): Boolean;
-begin
-  Result := False;
 end;
 
 function TDTOGenerator.JSONTypeStr(Typ: TJSONtype): String;
@@ -201,7 +195,7 @@ begin
         jtString:
           Begin
             List.ElementType.Kind := kString;
-            if IsDatetime(FirstElement.AsString.Value) then
+            if TJSONParser.IsDatetime(FirstElement.AsString.Value) then
               List.ElementType.Kind := kDatetime;
           End;
         jtBoolean: List.ElementType.Kind := kBoolean;
@@ -234,7 +228,7 @@ begin
                      List.ElementType.Kind := kUnsupported;
           kDatetime: if Element.SelfType <> jtString then
                        List.ElementType.Kind := kUnsupported
-                     else if not IsDatetime(Element.AsString.Value) then
+                     else if not TJSONParser.IsDatetime(Element.AsString.Value) then
                        List.ElementType.Kind := kString;
           kInteger: if Element.SelfType <> jtNumber then
                       List.ElementType.Kind := kUnsupported
@@ -292,7 +286,7 @@ begin
                    Prop.Value.Kind := kUnsupported;
         kDatetime: If Pair.Value.SelfType <> jtString then
                      Prop.Value.Kind := kUnsupported
-                   else If not IsDatetime(Pair.Value.AsString.Value) then
+                   else If not TJSONParser.IsDatetime(Pair.Value.AsString.Value) then
                      Prop.Value.Kind := kString;
         kInteger: If Pair.Value.SelfType <> jtNumber then
                     Prop.Value.Kind := kUnsupported
@@ -321,7 +315,12 @@ procedure TDTOGenerator.ParseValue(JSON: TJSON_Element; Value: TDTO_Value);
 begin
   case JSON.SelfType of
     jtNumber:  Value.Kind := WidenNumber( kInteger, JSON.AsNumber );
-    jtString:  Value.Kind := kString;
+    jtString:
+        Begin
+          Value.Kind := kString;
+          if TJSONParser.IsDateTime(JSON.AsString.Value) then
+            Value.Kind := kDatetime;
+        End;
     jtBoolean: Value.Kind := kBoolean;
     jtNull:    Value.Kind := kUnknown;
     jtArray:

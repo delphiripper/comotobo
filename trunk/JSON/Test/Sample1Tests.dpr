@@ -9,7 +9,8 @@ uses
   DUnitTestRunner,
   TestJSON in 'TestJSON.pas',
   JSON in '..\JSON.pas',
-  TestObjects in 'TestObjects.pas';
+  TestObjects in 'TestObjects.pas',
+  WinHttp_TLB in '..\WinHttp_TLB.pas';
 
 {R *.RES}
 
