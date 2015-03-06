@@ -57,6 +57,7 @@ Uses
 procedure TWizardForm.ButtonImportClick(Sender: TObject);
 begin
   Close;
+  ModalResult := mrOk;
 end;
 
 procedure TWizardForm.ButtonGetClick(Sender: TObject);
@@ -69,7 +70,6 @@ end;
 
 procedure TWizardForm.ButtonCancelClick(Sender: TObject);
 begin
-  FDTOSource.Clear;
   Close;
 end;
 
@@ -107,8 +107,8 @@ end;
 
 function TWizardForm.Execute: String;
 begin
-  ShowModal;
-  if FDTOSource.Count > 0 then
+  if (ShowModal = mrOk) and
+     (FDTOSource.Count > 0) then
     Result := FDTOSource.Text
   else
     Result := '';
