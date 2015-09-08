@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{5A0E92E0-2FBC-4546-9210-04C8BD0294CC}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="TestBench\HtmlTest.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="UnitTest\XPathTests.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="HtmlTest">
+        <MSBuild Projects="TestBench\HtmlTest.dproj"/>
+    </Target>
+    <Target Name="HtmlTest:Clean">
+        <MSBuild Projects="TestBench\HtmlTest.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="HtmlTest:Make">
+        <MSBuild Projects="TestBench\HtmlTest.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="XPathTests">
+        <MSBuild Projects="UnitTest\XPathTests.dproj"/>
+    </Target>
+    <Target Name="XPathTests:Clean">
+        <MSBuild Projects="UnitTest\XPathTests.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="XPathTests:Make">
+        <MSBuild Projects="UnitTest\XPathTests.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="HtmlTest;XPathTests"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="HtmlTest:Clean;XPathTests:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="HtmlTest:Make;XPathTests:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

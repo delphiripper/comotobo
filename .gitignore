@@ -1,0 +1,7 @@
+*.identcache
+*.local
+*.dcu
+XPath/UnitTest/Win32/Debug/dunit.ini
+XPath/_history/
+XPath/TestBench/_history/
+XPath/UnitTest/_history/
