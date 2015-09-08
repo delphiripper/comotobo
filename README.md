@@ -6,7 +6,7 @@ The JSON unit makes reading and writing JSON easy (using RTTI).
 
 For example; parsing JSON array of objects directly into a TObjectList<>:
 ```Delphi
-JSON := '[ {"ID":4, "Name":"Tom" }, {"ID":7, "Name":"Julia" }, ]';
+JSON := '[ {"ID":4, "Name":"Tom" }, {"ID":7, "Name":"Julia" } ]';
 TJSONParser.Parse( JSON, List );
 ```
 
