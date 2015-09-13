@@ -320,6 +320,7 @@ begin
   TJSONParser.Parse( MemoJSON.Text, TimeSeries );
   AddTimeseries( TimeSeries );
   Show( TimeSeries );
+  Memo1.Text := TJSONSerializer.Serialize(TimeSeries);
 end;
 
 { TStuff }

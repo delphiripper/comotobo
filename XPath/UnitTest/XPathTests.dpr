@@ -6,10 +6,11 @@ program XPathTests;
 
 uses
   DUnitTestRunner,
+  TestLexer in 'TestLexer.pas',
   TestHtmlParser in 'TestHtmlParser.pas',
+  TestXPath in 'TestXPath.pas',
   HtmlParser in '..\HtmlParser.pas',
   XPathLexer in '..\XPathLexer.pas',
-  TestXPath in 'TestXPath.pas',
   XPath in '..\XPath.pas';
 
 {$R *.RES}

@@ -93,10 +93,11 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
+        <DCCReference Include="TestLexer.pas"/>
         <DCCReference Include="TestHtmlParser.pas"/>
+        <DCCReference Include="TestXPath.pas"/>
         <DCCReference Include="..\HtmlParser.pas"/>
         <DCCReference Include="..\XPathLexer.pas"/>
-        <DCCReference Include="TestXPath.pas"/>
         <DCCReference Include="..\XPath.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>

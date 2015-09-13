@@ -3,7 +3,7 @@
 program Sample1;
 
 uses
-  FastMM4,
+  //FastMM4,
   Vcl.Forms,
   Sample1Form in 'Sample1Form.pas' {Form1},
   TimeseriesDTO in 'TimeseriesDTO.pas',

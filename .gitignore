@@ -1,7 +1,8 @@
 *.identcache
 *.local
 *.dcu
+JSON/__history/
 XPath/UnitTest/Win32/Debug/dunit.ini
-XPath/_history/
-XPath/TestBench/_history/
-XPath/UnitTest/_history/
+XPath/__history/
+XPath/TestBench/__history/
+XPath/UnitTest/__history/

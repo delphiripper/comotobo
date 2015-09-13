@@ -8,8 +8,8 @@ Uses
 Const
   CH_WHITESPACE   : TSysCharSet = [' ', #9, #10, #13];
   CH_DIGITS       : TSysCharSet = ['0' .. '9'];
-  CH_IDENT_FIRST  : TSysCharSet = ['A' .. 'Z', '_', '~', '|', '$'];
-  CH_IDENT        : TSysCharSet = ['0' .. '9', 'A' .. 'Z', '_', '~', '|'];
+  CH_IDENT_FIRST  : TSysCharSet = ['A' .. 'Z', '_'];
+  CH_IDENT        : TSysCharSet = ['0' .. '9', 'A' .. 'Z', '_', '-'];
   CH_SYMBOL_FIRST : TSysCharSet = ['@', '/', '*', '+', '-', '[', ']', '(', ')', '=', '<', '>', ':', '.', '!', '$', ',', '.'];
 
 Type
@@ -25,15 +25,20 @@ Type
                  ttDocumentNode, ttElement, ttAttribute, ttSchemaElement, ttSchemaAttribute,
                  ttProcessingInstruction, ttComment, ttText, ttNode,
                  ttEOF );
+  TTokenTypeSet = Set of TTokenType;
 
 Const
-  StringTokens: Set of TTokenType = [
-                 ttOr, ttAnd, ttDiv, ttIDiv, ttMod,
-                 ttChild, ttDescendant, ttDescendantOrSelf, ttParent, ttSelf,
-                 ttFollowingSibling, ttFollowing, ttNamespace, ttAncestor,
-                 ttPrecedingSibling, ttPreceding, ttAncestorOrSelf,
-                 ttDocumentNode, ttElement, ttAttribute, ttSchemaElement, ttSchemaAttribute,
-                 ttProcessingInstruction, ttComment, ttText, ttNode ];
+  StringTokens: TTokenTypeSet = [ ttOr, ttAnd, ttDiv, ttIDiv, ttMod,
+                                  ttChild, ttDescendant, ttDescendantOrSelf, ttParent, ttSelf,
+                                  ttFollowingSibling, ttFollowing, ttNamespace, ttAncestor,
+                                  ttPrecedingSibling, ttPreceding, ttAncestorOrSelf,
+                                  ttDocumentNode, ttElement, ttAttribute, ttSchemaElement, ttSchemaAttribute,
+                                  ttProcessingInstruction, ttComment, ttText, ttNode ];
+  SingleSymbols: TTokenTypeSet = [ ttParenStart, ttParenEnd, ttBracketStart, ttBracketEnd,
+                                   ttAt, ttDot, ttSlash, ttDollar, ttComma,
+                                   ttPlus, ttMinus, ttMultiply,
+                                   ttEquals, ttLess, ttGreater ];
+  DoubleSymbols: TTokenTypeSet = [ ttColonColon, ttDotDot, ttDoubleSlash, ttNotEquals, ttLessEqual, ttGreaterEqual ];
 
 Type
   TTokenTypeHelper = Record Helper for TTokenType
@@ -83,6 +88,8 @@ Type
     FToken      : TToken;
     FCurIdx     : Integer;
     Procedure Lex( AInput: String );
+    Function ParseSymbol( AStr: String; ATokens: TTokenTypeSet; ALine, AIndex: Integer ): Boolean;
+    Function StrInTokenSet( AStr: String; ATokens: TTokenTypeSet ): TTokenType;
   Public
     Property Token: TToken read FToken;
     Function EOF: Boolean;
@@ -153,7 +160,6 @@ procedure TLexer.Lex( AInput: String );
 var
   StartP, P, Line, Len, LineStart: Integer;
   LStr, Str, TwoChars: String;
-  TokenType: TTokenType;
   ExpectIdentifier: Boolean;
 begin
   FTokenList.Clear;
@@ -209,51 +215,11 @@ begin
       Begin
         if CharInSet( AInput[P], CH_SYMBOL_FIRST ) then
         Begin
-          if TwoChars = '..' then
-            Begin FTokenList.Add( TToken.Create( ttDotDot, '..', Line, P-LineStart ) ); inc(P,2); End
-          else if TwoChars = '::' then
-            Begin FTokenList.Add( TToken.Create( ttColonColon, '::', Line, P-LineStart ) ); inc(P,2); End
-          else if TwoChars = '//' then
-            Begin FTokenList.Add( TToken.Create( ttDoubleSlash, '//', Line, P-LineStart ) ); inc(P,2); End
-          else if TwoChars = '<>' then
-            Begin FTokenList.Add( TToken.Create( ttNotEquals, '<>', Line, P-LineStart ) ); inc(P,2); End
-          else if TwoChars = '!=' then
-            Begin FTokenList.Add( TToken.Create( ttNotEquals, '!=', Line, P-LineStart ) ); inc(P,2); End
-          else if TwoChars = '<=' then
-            Begin FTokenList.Add( TToken.Create( ttLessEqual, '<=', Line, P-LineStart ) ); inc(P,2); End
-          else if TwoChars = '>=' then
-            Begin FTokenList.Add( TToken.Create( ttGreaterEqual, '>=', Line, P-LineStart ) ); inc(P,2); End
-          else if AInput[P] = '.' then
-            Begin FTokenList.Add( TToken.Create( ttDot, '.', Line, P-LineStart ) ); inc(P,2); End
-          else if AInput[P] = ',' then
-            Begin FTokenList.Add( TToken.Create( ttComma, ',', Line, P-LineStart ) ); inc(P); End
-          else if AInput[P] = '+' then
-            Begin FTokenList.Add( TToken.Create( ttPlus, '+', Line, P-LineStart ) ); inc(P); End
-          else if AInput[P] = '-' then
-            Begin FTokenList.Add( TToken.Create( ttMinus, '-', Line, P-LineStart ) ); inc(P); End
-          else if AInput[P] = '*' then
-            Begin FTokenList.Add( TToken.Create( ttMultiply, '*', Line, P-LineStart ) ); inc(P); End
-          else if AInput[P] = '$' then
-            Begin FTokenList.Add( TToken.Create( ttDollar, '$', Line, P-LineStart ) ); inc(P); End
-          else if AInput[P] = '(' then
-            Begin FTokenList.Add( TToken.Create( ttParenStart, '(', Line, P-LineStart ) ); inc(P); End
-          else if AInput[P] = ')' then
-            Begin FTokenList.Add( TToken.Create( ttParenEnd, ')', Line, P-LineStart ) ); inc(P); End
-          else if AInput[P] = '[' then
-            Begin FTokenList.Add( TToken.Create( ttBracketStart, '[', Line, P-LineStart ) ); inc(P); End
-          else if AInput[P] = ']' then
-            Begin FTokenList.Add( TToken.Create( ttBracketEnd, ']', Line, P-LineStart ) ); inc(P); End
-          else if AInput[P] = '@' then
-            Begin FTokenList.Add( TToken.Create( ttAt, '@', Line, P-LineStart ) ); inc(P); End
-          else if AInput[P] = '/' then
-            Begin FTokenList.Add( TToken.Create( ttSlash, '/', Line, P-LineStart ) ); inc(P); End
-          else if AInput[P] = '=' then
-            Begin FTokenList.Add( TToken.Create( ttEquals, '=', Line, P-LineStart ) ); inc(P); End
-          else if AInput[P] = '<' then
-            Begin FTokenList.Add( TToken.Create( ttLess, '<', Line, P-LineStart ) ); inc(P); End
-          else if AInput[P] = '>' then
-            Begin FTokenList.Add( TToken.Create( ttGreater, '>', Line, P-LineStart ) ); inc(P); End
-          Else
+          if ParseSymbol( TwoChars, DoubleSymbols, Line, P-LineStart ) then
+            inc(P,2)
+          else if ParseSymbol( AInput[P], SingleSymbols, Line, P-LineStart ) then
+            inc(P)
+          else
             Raise ELexerException.CreateFmt( 'Unknown character: "%s" (Line %d, Index %d)', [AInput[P], Line, P-LineStart] );
         End
         //Numbers
@@ -301,34 +267,17 @@ begin
           LStr := Lowercase( Str );
           ExpectIdentifier := False;
           If (FTokenList.Count > 0) then
-          Begin
-            If  (FTokenList.Last.TokenType = ttColonColon) and
-                not ((LStr = 'text') or (LStr = 'node')) then
-              ExpectIdentifier := True
-            Else If (FTokenList.Last.TokenType in [ttSlash, ttDoubleSlash]) and
-                    not ( (LStr = 'child') or
-                          (LStr = 'descendant') or
-                          (LStr = 'descendant-or-self') or
-                          (LStr = 'parent') or
-                          (LStr = 'self') or
-                          (LStr = 'following-sibling') or
-                          (LStr = 'following') or
-                          (LStr = 'namespace') or
-                          (LStr = 'ancestor') or
-                          (LStr = 'preceding') or
-                          (LStr = 'preceding-sibling') or
-                          (LStr = 'ancestor-or-self') ) then
-              ExpectIdentifier := True;
-          End;
+            ExpectIdentifier := ( (FTokenList.Last.TokenType = ttColonColon) and
+                                  not ( ((LStr = 'text') or (LStr = 'node')) and
+                                        (Copy(AInput, P, 1)='(') ) )
+                                OR
+                                ( (FTokenList.Last.TokenType in [ttSlash, ttDoubleSlash]) and
+                                  not (StrInTokenSet( LStr, [ ttChild, ttDescendant, ttDescendantOrSelf, ttParent, ttSelf,
+                                                              ttFollowingSibling, ttFollowing, ttNamespace, ttAncestor,
+                                                              ttPrecedingSibling, ttPreceding, ttAncestorOrSelf ] ) <> ttEOF) );
 
-          if (not ExpectIdentifier) then
-            for TokenType in StringTokens do
-              if LStr = TokenType.AsString then
-              Begin
-                FTokenList.Add( TToken.Create( TokenType, LStr, Line, StartP-LineStart ) );
-                LStr := '';
-              End;
-          if LStr <> '' then
+          If ExpectIdentifier or
+             not ParseSymbol( LStr, StringTokens, Line, StartP-LineStart ) then
             FTokenList.Add( TToken.Create( ttIdentifier, Str, Line, StartP-LineStart ) );
         End
         //String
@@ -355,7 +304,7 @@ begin
     End;
   until (P > Len);
 
-  FTokenList.Add( TToken.Create( ttEOF, Str, Line, Len+1 ) );
+  FTokenList.Add( TToken.Create( ttEOF, ttEOF.AsString, Line, Len+1 ) );
   FToken := FTokenList[0];
 end;
 
@@ -366,6 +315,16 @@ begin
     FToken := FTokenList[ FCurIdx ]
   Else
     FToken := nil;
+end;
+
+function TLexer.ParseSymbol(AStr: String; ATokens: TTokenTypeSet; ALine, AIndex: Integer): Boolean;
+var
+  TokenType: TTokenType;
+begin
+  TokenType := StrInTokenSet(AStr, ATokens);
+  Result := (TokenType <> ttEOF);
+  if Result then
+    FTokenList.Add( TToken.Create( TokenType, AStr, ALine, AIndex ) );
 end;
 
 function TLexer.Peek: TToken;
@@ -379,6 +338,16 @@ end;
 function TLexer.Remaining: Integer;
 begin
   Result := FTokenList.Count - (FCurIdx + 1);
+end;
+
+function TLexer.StrInTokenSet(AStr: String; ATokens: TTokenTypeSet): TTokenType;
+var
+  TokenType: TTokenType;
+begin
+  Result := ttEOF;
+  For TokenType in ATokens do
+    if TokenType.AsString = AStr then
+      Result := TokenType;
 end;
 
 { TTokenTypeHelper }
