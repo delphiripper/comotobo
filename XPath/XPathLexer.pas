@@ -272,9 +272,10 @@ begin
                                         (Copy(AInput, P, 1)='(') ) )
                                 OR
                                 ( (FTokenList.Last.TokenType in [ttSlash, ttDoubleSlash]) and
-                                  not (StrInTokenSet( LStr, [ ttChild, ttDescendant, ttDescendantOrSelf, ttParent, ttSelf,
-                                                              ttFollowingSibling, ttFollowing, ttNamespace, ttAncestor,
-                                                              ttPrecedingSibling, ttPreceding, ttAncestorOrSelf ] ) <> ttEOF) );
+                                  not ( (Copy(AInput, P, 2)='::') ) and
+                                        StrInTokenSet( LStr, [ ttChild, ttDescendant, ttDescendantOrSelf, ttParent, ttSelf,
+                                                                ttFollowingSibling, ttFollowing, ttNamespace, ttAncestor,
+                                                                ttPrecedingSibling, ttPreceding, ttAncestorOrSelf ] ) <> ttEOF) );
 
           If ExpectIdentifier or
              not ParseSymbol( LStr, StringTokens, Line, StartP-LineStart ) then
