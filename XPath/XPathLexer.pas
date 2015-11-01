@@ -267,15 +267,18 @@ begin
           LStr := Lowercase( Str );
           ExpectIdentifier := False;
           If (FTokenList.Count > 0) then
+          Begin
             ExpectIdentifier := ( (FTokenList.Last.TokenType = ttColonColon) and
                                   not ( ((LStr = 'text') or (LStr = 'node')) and
-                                        (Copy(AInput, P, 1)='(') ) )
+                                        (Copy(AInput, P, 1) = '(') ) );
+            ExpectIdentifier := ExpectIdentifier
                                 OR
                                 ( (FTokenList.Last.TokenType in [ttSlash, ttDoubleSlash]) and
-                                  not ( (Copy(AInput, P, 2)='::') ) and
-                                        StrInTokenSet( LStr, [ ttChild, ttDescendant, ttDescendantOrSelf, ttParent, ttSelf,
+                                  not ( (Copy(AInput, P, 2) = '::') and
+                                        (StrInTokenSet( LStr, [ ttChild, ttDescendant, ttDescendantOrSelf, ttParent, ttSelf,
                                                                 ttFollowingSibling, ttFollowing, ttNamespace, ttAncestor,
-                                                                ttPrecedingSibling, ttPreceding, ttAncestorOrSelf ] ) <> ttEOF) );
+                                                                ttPrecedingSibling, ttPreceding, ttAncestorOrSelf ] ) <> ttEOF) ) );
+          End;
 
           If ExpectIdentifier or
              not ParseSymbol( LStr, StringTokens, Line, StartP-LineStart ) then
