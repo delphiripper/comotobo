@@ -87,20 +87,20 @@
             <Form>TestbenchForm</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="AMQP.Method.pas"/>
-        <DCCReference Include="AMQP.Types.pas"/>
-        <DCCReference Include="AMQP.Message.pas"/>
-        <DCCReference Include="AMQP.Protocol.pas"/>
-        <DCCReference Include="AMQP.Connection.pas"/>
-        <DCCReference Include="AMQP.Frame.pas"/>
-        <DCCReference Include="AMQP.Helper.pas"/>
-        <DCCReference Include="AMQP.Payload.pas"/>
-        <DCCReference Include="AMQP.MessageProperties.pas"/>
-        <DCCReference Include="AMQP.Header.pas"/>
-        <DCCReference Include="AMQP.StreamHelper.pas"/>
-        <DCCReference Include="AMQP.Channel.pas"/>
-        <DCCReference Include="AMQP.Classes.pas"/>
-        <DCCReference Include="AMQP.Interfaces.pas"/>
+        <DCCReference Include="..\..\Source\AMQP.Method.pas"/>
+        <DCCReference Include="..\..\Source\AMQP.Types.pas"/>
+        <DCCReference Include="..\..\Source\AMQP.Message.pas"/>
+        <DCCReference Include="..\..\Source\AMQP.Protocol.pas"/>
+        <DCCReference Include="..\..\Source\AMQP.Connection.pas"/>
+        <DCCReference Include="..\..\Source\AMQP.Frame.pas"/>
+        <DCCReference Include="..\..\Source\AMQP.Helper.pas"/>
+        <DCCReference Include="..\..\Source\AMQP.Payload.pas"/>
+        <DCCReference Include="..\..\Source\AMQP.MessageProperties.pas"/>
+        <DCCReference Include="..\..\Source\AMQP.Header.pas"/>
+        <DCCReference Include="..\..\Source\AMQP.StreamHelper.pas"/>
+        <DCCReference Include="..\..\Source\AMQP.Channel.pas"/>
+        <DCCReference Include="..\..\Source\AMQP.Classes.pas"/>
+        <DCCReference Include="..\..\Source\AMQP.Interfaces.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

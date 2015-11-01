@@ -25,11 +25,11 @@ Type
 
   TAMQPChannel = class(TInterfacedObject, IAMQPBaseChannel, IAMQPChannel)
   Strict private
-    FConnection    : IAMQPConnection;
-    FID            : Integer;
-    FConfirmSelect : Boolean;
-    FQueue         : TAMQPQueue;
-    FConsumers     : TObjectList<TConsumer>;
+    FConnection      : IAMQPConnection;
+    FID              : Integer;
+    FConfirmSelect   : Boolean;
+    FQueue           : TAMQPQueue;
+    FConsumers       : TObjectList<TConsumer>;
     FDeliverConsumer : TConsumer;
     FDeliverQueue    : TObjectList<TAMQPFrame>;
     procedure AddConsumer( AQueueName, AConsumerTag: String; AMessageHandler: TConsumerMethod; AMessageQueue: TAMQPMessageQueue );
