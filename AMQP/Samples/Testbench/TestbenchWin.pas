@@ -202,7 +202,7 @@ end;
 
 procedure TTestbenchForm.ButtonExchangeDeclareClick(Sender: TObject);
 begin
-  Channel.ExchangeDeclare( 'Colors', 'direct' );
+  Channel.ExchangeDeclare( 'Colors', etTopic );
 end;
 
 procedure TTestbenchForm.ButtonExchangeDeleteClick(Sender: TObject);
@@ -286,8 +286,11 @@ end;
 
 procedure TTestbenchForm.ButtonCloseChannelClick(Sender: TObject);
 begin
-  Channel.Close;
-  Channel := nil;
+  Try
+    Channel.Close;
+  Finally
+    Channel := nil;
+  End;
 end;
 
 procedure TTestbenchForm.ButtonConfirmSelectClick(Sender: TObject);
@@ -303,6 +306,9 @@ begin
   AMQP.Username    := 'TestUser';
   AMQP.Password    := 'password';
   AMQP.Connect;
+  MemoMessages.Lines.Add( 'AMQP.ClassName: ' + AMQP.ClassName );
+  MemoMessages.Lines.Add( 'AMQP.UnitName:  ' + AMQP.UnitName );
+  MemoMessages.Lines.Add( 'AMQP.UnitScope: ' + AMQP.UnitScope );
 end;
 
 procedure TTestbenchForm.ButtonConsumeBlueClick(Sender: TObject);

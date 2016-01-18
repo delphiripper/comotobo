@@ -143,7 +143,7 @@ var
   Frame  : IAMQPFrame;
   Method : TAMQPMethod;
 begin
-  if ChannelNeedsToBeClosedOnServer( AChannel ) then
+  if (AChannel.State = cOpen) and ChannelNeedsToBeClosedOnServer( AChannel ) then
   Begin
     Method := TAMQPMethod.CreateMethod( AMQP_CHANNEL_CLOSE );
     Try
@@ -800,9 +800,12 @@ Begin
         else If AFrame.Payload.AsMethod.IsMethod( AMQP_CONNECTION_CLOSE ) then
         Begin
           Terminate;
-          ServerDisconnect( AFrame.Payload.AsMethod.Field[ 'reply-text' ].AsShortString.Value );
-          AFrame.Free;
-          raise AMQPException.Create('Server closed connection');
+          Try
+            ServerDisconnect( AFrame.Payload.AsMethod.Field[ 'reply-text' ].AsShortString.Value );
+          Finally
+            AFrame.Free;
+          End;
+          //raise AMQPException.Create('Server closed connection');
         End
         Else
           FMainQueue.Put( AFrame );

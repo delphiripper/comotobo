@@ -63,7 +63,7 @@ Const
   AMQP_BASIC_CANCEL         : TAMQPMethodID = ( ClassID: AMQP_CLASS_BASIC; MethodID: 30 );
   AMQP_BASIC_CANCEL_OK      : TAMQPMethodID = ( ClassID: AMQP_CLASS_BASIC; MethodID: 31 );
   AMQP_BASIC_PUBLISH        : TAMQPMethodID = ( ClassID: AMQP_CLASS_BASIC; MethodID: 40 );
-  AMQP_BASIC_RETURN         : TAMQPMethodID = ( ClassID: AMQP_CLASS_BASIC; MethodID: 50 ); //TODO
+  AMQP_BASIC_RETURN         : TAMQPMethodID = ( ClassID: AMQP_CLASS_BASIC; MethodID: 50 );
   AMQP_BASIC_DELIVER        : TAMQPMethodID = ( ClassID: AMQP_CLASS_BASIC; MethodID: 60 );
   AMQP_BASIC_GET            : TAMQPMethodID = ( ClassID: AMQP_CLASS_BASIC; MethodID: 70 );
   AMQP_BASIC_GET_OK         : TAMQPMethodID = ( ClassID: AMQP_CLASS_BASIC; MethodID: 71 );

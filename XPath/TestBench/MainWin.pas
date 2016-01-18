@@ -30,6 +30,7 @@ type
     Grid: TStringGrid;
     Button1: TButton;
     ButtonExaaTest: TButton;
+    CheckBoxTrimTags: TCheckBox;
     procedure ButtonDownloadClick(Sender: TObject);
     procedure ButtonParseLastDownloadClick(Sender: TObject);
     procedure ButtonParseMemoClick(Sender: TObject);
@@ -155,6 +156,31 @@ Begin
 End;
 
 procedure TForm1.ShowXPathTable;
+
+  Function TrimHtmlTags( S: String ): String;
+  var
+    Start, EndTag: Integer;
+  Begin
+    Result := S;
+    Start := Pos( '<', S );
+    EndTag := Pos( '>', S );
+    while (Start > 0) and (EndTag > 0) and (EndTag > Start) do
+    Begin
+      S := Copy( S, 1, Start-1 ) + Copy( S, EndTag+1, MaxInt );
+      Start  := Pos( '<', S );
+      EndTag := Pos( '>', S );
+    End;
+    Result := S;
+  End;
+
+  Function TrimCellText( S: String ): String;
+  Begin
+    Result := S;
+    if CheckBoxTrimTags.Checked then
+      Result := TrimHtmlTags( Result );
+    Result := Trim( Result );
+  End;
+
 var
   ColCount, Col, Row: Integer;
   Node, Child: TNode;
@@ -188,13 +214,13 @@ begin
     Begin
       Col := 0;
       if ColCount = 0 then
-        Grid.Cells[ Col, Row ] := Trim( Node.Text )
+        Grid.Cells[ Col, Row ] := TrimCellText( Node.Text )
       Else
       Begin
         Grid.Rows[ Row ].Text := '';
         For Child in Node do
         Begin
-          Grid.Cells[ Col, Row ] := Trim( Child.Text );
+          Grid.Cells[ Col, Row ] := TrimCellText( Child.Text );
           Inc( Col );
         End;
       End;

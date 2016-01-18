@@ -10,6 +10,12 @@ Type
 
   TConsumerMethod = Reference to Procedure( AMQPMessage: TAMQPMessage; var SendAck: Boolean );
 
+  TExchangeType = ( etDirect, etTopic, etFanout, etHeaders );
+
+Const
+  ExchangeTypeStr : Array[TExchangeType] of string = ( 'direct', 'topic', 'fanout', 'headers' );
+
+Type
   IAMQPChannel = interface(IAMQPBaseChannel) ['{6620C29F-0354-4C66-A3AC-4D5F7BB7113A}']
     Function GetID    : Integer;
     Function GetQueue : TAMQPQueue;
@@ -19,7 +25,8 @@ Type
     Property Queue : TAMQPQueue        read GetQueue;
     Property State : TAMQPChannelState read GetState;
 
-    Procedure ExchangeDeclare( AExchangeName, AType: String; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False );
+    Procedure ExchangeDeclare( AExchangeName, AType: String; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False ); overload;
+    Procedure ExchangeDeclare( AExchangeName: String; AType: TExchangeType; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False ); overload;
     Procedure ExchangeDelete( AExchangeName: String; AIfUnused: Boolean = True; ANoWait: Boolean = False );
     Procedure QueueDeclare( AQueueName: String; APassive: Boolean = False; ADurable: Boolean = True; AExclusive: Boolean = False;
                             AAutoDelete: Boolean = False; ANoWait: Boolean = False );
@@ -28,8 +35,8 @@ Type
     Procedure QueueDelete( AQueueName: String; AIfUnused: Boolean = True; AIfEmpty: Boolean = True; ANoWait: Boolean = False );
     Procedure QueueUnBind( AQueueName, AExchangeName, ARoutingKey: String );
 
-    Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream ); Overload;
-    Procedure BasicPublish( AExchange, ARoutingKey: String; Const AData: String; AEncoding: TEncoding ); Overload;
+    Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean = False ); Overload;
+    Procedure BasicPublish( AExchange, ARoutingKey: String; Const AData: String; AEncoding: TEncoding; AMandatory: Boolean = False ); Overload;
     Function  BasicGet( AQueueName: String; ANoAck: Boolean = False ): TAMQPMessage;
     Procedure BasicAck( AMessage: TAMQPMessage; AMultiple: Boolean = False ); Overload;
     //Procedure BasicAck( ADeliveryTag: UInt64; AMultiple: Boolean = False ); Overload;

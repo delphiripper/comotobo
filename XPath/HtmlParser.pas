@@ -469,8 +469,10 @@ var
   S        : Integer;
   Name     : String;
   EndOfTag : Boolean;
+  UnendedTag : Boolean;
   Tag      : TNode;
 Begin
+  UnendedTag := False;
   Result := TNode.Create( AParent.FDom, AParent, P );
   Try
     Eat( '<' );
@@ -511,8 +513,12 @@ Begin
             Name := ReadUntil( '/>' + WhiteSpace );
             Result.ContentEndIndex := S-1;
             If Lowercase(Name) <> Result.Name then
-              //TODO: Try finishing a parent node
-              raise EDomException.Create('Expected "</' + Result.Name + '>"');
+            Begin
+              //Try finishing a parent node
+              UnendedTag := True;
+              P := S; //Backtrack
+              //raise EDomException.Create('Expected "</' + Result.Name + '>"');
+            End;
           End
           Else if Pos( Raw[p], WhiteSpace ) <= 0 then // ignore "< "
           Begin
@@ -525,7 +531,8 @@ Begin
       End;
       //End of tag
     End;
-    Eat( '>' );
+    if not UnendedTag then
+      Eat( '>' );
     if Result <> nil then
       Result.EndIndex := P-1;
   Except

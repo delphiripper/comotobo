@@ -343,8 +343,15 @@ begin
               Add( 'reserved',    TShortUInt.Create( 0 ) );
               Add( 'exchange',    TShortString.Create( '' ) );
               Add( 'routing-key', TShortString.Create( '' ) );
-              Add( 'mandatory',   TBoolean.Create( True ) );
+              Add( 'mandatory',   TBoolean.Create( False ) ); //True => if undeliverable, a return will be fired
               Add( 'immediate',   TBoolean.Create( False ) );
+            End;
+        50: Begin
+              Name := 'basic.return';
+              Add( 'reply-code',  TShortUInt.Create( 0 ) );
+              Add( 'reply-text',  TShortString.Create( '' ) );
+              Add( 'exchange',    TShortString.Create( '' ) );
+              Add( 'routing-key', TShortString.Create( '' ) );
             End;
         60: Begin
               Name := 'basic.deliver';

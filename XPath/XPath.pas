@@ -754,7 +754,7 @@ Begin
     else if FToken.Text = 'text' then
     Begin
       if AssertParameterCount(0) then
-        Result := TXValue.CreateString( AContext.Node.Text )
+        Result := TXValue.CreateString( Trim( AContext.Node.Text ) )
     End
     else if FToken.Text = 'true' then
     Begin

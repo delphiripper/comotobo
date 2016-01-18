@@ -102,6 +102,10 @@ object Form1: TForm1
       object TabDom: TTabSheet
         Caption = 'HTML input'
         Constraints.MinWidth = 200
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         DesignSize = (
           613
           479)
@@ -168,6 +172,16 @@ object Form1: TForm1
           TabOrder = 1
           OnClick = Button1Click
         end
+        object CheckBoxTrimTags: TCheckBox
+          Left = 112
+          Top = 8
+          Width = 97
+          Height = 17
+          Caption = 'Trim HTML tags'
+          Checked = True
+          State = cbChecked
+          TabOrder = 2
+        end
       end
     end
     object PageControlLeft: TPageControl
@@ -194,6 +208,10 @@ object Form1: TForm1
       object TabSheet2: TTabSheet
         Caption = 'XPath Result'
         ImageIndex = 1
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object TreeViewXPath: TTreeView
           Left = 0
           Top = 0

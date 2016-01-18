@@ -43,6 +43,7 @@ Type
     procedure Deliver( ADeliver: TAMQPFrame );
     procedure CheckDeliveryComplete;
     Function HasCompleteMessageInQueue( AQueue: TObjectList<TAMQPFrame> ): Boolean;
+    procedure UnexpectedMethodReceived( AMethod: TAMQPMethod );
     Function GetMessageFromQueue( AQueue: TObjectList<TAMQPFrame> ): TAMQPMessage;
     procedure ReceiveFrame( AFrame: TAMQPFrame );
   Public
@@ -51,7 +52,8 @@ Type
     Function GetState     : TAMQPChannelState;
     Function GetConsumers : TObjectList<TConsumer>;
 
-    Procedure ExchangeDeclare( AExchangeName, AType: String; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False );
+    Procedure ExchangeDeclare( AExchangeName, AType: String; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False ); overload;
+    Procedure ExchangeDeclare( AExchangeName: String; AType: TExchangeType; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False ); overload;
     Procedure ExchangeDelete( AExchangeName: String; AIfUnused: Boolean = True; ANoWait: Boolean = False );
     Procedure QueueDeclare( AQueueName: String; APassive: Boolean = False; ADurable: Boolean = True; AExclusive: Boolean = False;
                             AAutoDelete: Boolean = False; ANoWait: Boolean = False );
@@ -60,8 +62,8 @@ Type
     Procedure QueueDelete( AQueueName: String; AIfUnused: Boolean = True; AIfEmpty: Boolean = True; ANoWait: Boolean = False );
     Procedure QueueUnBind( AQueueName, AExchangeName, ARoutingKey: String );
 
-    Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream ); Overload;
-    Procedure BasicPublish( AExchange, ARoutingKey: String; Const AData: String; AEncoding: TEncoding ); Overload;
+    Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean = False ); Overload;
+    Procedure BasicPublish( AExchange, ARoutingKey: String; Const AData: String; AEncoding: TEncoding; AMandatory: Boolean = False ); Overload;
     Function  BasicGet( AQueueName: String; ANoAck: Boolean = False ): TAMQPMessage;
     Procedure BasicAck( AMessage: TAMQPMessage; AMultiple: Boolean = False ); Overload;
     Procedure BasicAck( ADeliveryTag: UInt64; AMultiple: Boolean = False ); Overload;
@@ -197,6 +199,11 @@ begin
   Finally
     Method.Free;
   End;
+end;
+
+procedure TAMQPChannel.ExchangeDeclare(AExchangeName: String; AType: TExchangeType; APassive, ADurable, ANoWait: Boolean);
+begin
+  ExchangeDeclare( AExchangeName, ExchangeTypeStr[AType], APassive, ADurable, ANoWait );
 end;
 
 procedure TAMQPChannel.ExchangeDelete(AExchangeName: String; AIfUnused, ANoWait: Boolean);
@@ -385,13 +392,13 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.BasicPublish(AExchange, ARoutingKey: String; const AData: String; AEncoding: TEncoding);
+procedure TAMQPChannel.BasicPublish(AExchange, ARoutingKey: String; const AData: String; AEncoding: TEncoding; AMandatory: Boolean = False);
 var
   StringStream: TStringStream;
 begin
   StringStream := TStringStream.Create( AData, AEncoding );
   Try
-    BasicPublish( AExchange, ARoutingKey, StringStream );
+    BasicPublish( AExchange, ARoutingKey, StringStream, AMandatory );
   Finally
     StringStream.Free;
   End;
@@ -416,7 +423,7 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.BasicPublish(AExchange, ARoutingKey: String; AData: TStream);
+procedure TAMQPChannel.BasicPublish(AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean = False);
 var
   Method: TAMQPMethod;
 begin
@@ -424,6 +431,7 @@ begin
   Try
     Method.Field['exchange'].AsShortString.Value    := AExchange;
     Method.Field['routing-key'].AsShortString.Value := ARoutingKey;
+    Method.Field['mandatory'].AsBoolean.Value       := AMandatory;
     WriteMethod(  Method );
     WriteContent( AMQP_CLASS_BASIC, AData );
     if FConfirmSelect then
@@ -582,13 +590,17 @@ begin
       MethodIsExpected := True;
 
   if not MethodIsExpected then
-    raise AMQPException.CreateFmt( 'Unexpected class/method: %d.%d',
-                                   [ Result.Payload.AsMethod.ClassID.Value, Result.Payload.AsMethod.MethodID.Value ] );
+    UnexpectedMethodReceived( Result.Payload.AsMethod );
 end;
 
 procedure TAMQPChannel.ReceiveFrame(AFrame: TAMQPFrame);
 begin
   if (AFrame.Payload is TAMQPMethod) and
+     AFrame.Payload.AsMethod.IsMethod( AMQP_BASIC_RETURN ) then
+  Begin
+    AFrame.Free; //TODO: Don't just ignore
+  End
+  Else if (AFrame.Payload is TAMQPMethod) and
      AFrame.Payload.AsMethod.IsMethod( AMQP_BASIC_DELIVER ) then
     Deliver( AFrame )
   Else if Assigned(FDeliverConsumer) then
@@ -608,6 +620,34 @@ begin
   if Consumer = nil then
     raise AMQPException.Create('Consumer not found');
   FConsumers.Remove( Consumer );
+end;
+
+procedure TAMQPChannel.UnexpectedMethodReceived(AMethod: TAMQPMethod);
+var
+  Method: TAMQPMethod;
+  TempConnection: IAMQPConnection;
+begin
+  if AMethod.IsMethod( AMQP_CHANNEL_CLOSE ) then
+  Begin
+    TempConnection := FConnection;
+    Method := TAMQPMethod.Create;
+    Method.Name           := 'channel.close-ok';
+    Method.ClassID.Value  := AMQP_CHANNEL_CLOSE_OK.ClassID;
+    Method.MethodID.Value := AMQP_CHANNEL_CLOSE_OK.MethodID;
+    Try
+      WriteMethod( Method );
+    Finally
+      FConnection := nil; //to signal that this channel is closed
+      Method.Free;
+    End;
+    TempConnection.CloseChannel( Self );
+    raise AMQPException.CreateFmt( 'Channel closed unexpectedly be server: %d %s',
+                                   [ AMethod.Field['reply-code'].AsShortUInt.Value,
+                                     AMethod.Field['reply-text'].AsShortString.Value ] );
+  End
+  else
+    raise AMQPException.CreateFmt( 'Unexpected class/method: %d.%d',
+                                   [ AMethod.ClassID.Value, AMethod.MethodID.Value ] );
 end;
 
 procedure TAMQPChannel.WriteContent(AClassID: Word; AContent: TStream);
