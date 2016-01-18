@@ -5,7 +5,7 @@ uses
   MainWin in 'MainWin.pas' {MainForm},
   Some.namespace in 'Some.namespace.pas',
   EasyDelphiQ.DTO in '..\EasyDelphiQ.DTO.pas',
-  EasyDelphiQ in 'EasyDelphiQ.pas',
+  EasyDelphiQ in '..\EasyDelphiQ.pas',
   AMQP.Channel in '..\..\AMQP\Source\AMQP.Channel.pas',
   AMQP.Classes in '..\..\AMQP\Source\AMQP.Classes.pas',
   AMQP.Connection in '..\..\AMQP\Source\AMQP.Connection.pas',

@@ -89,7 +89,7 @@
         </DCCReference>
         <DCCReference Include="Some.namespace.pas"/>
         <DCCReference Include="..\EasyDelphiQ.DTO.pas"/>
-        <DCCReference Include="EasyDelphiQ.pas"/>
+        <DCCReference Include="..\EasyDelphiQ.pas"/>
         <DCCReference Include="..\..\AMQP\Source\AMQP.Channel.pas"/>
         <DCCReference Include="..\..\AMQP\Source\AMQP.Classes.pas"/>
         <DCCReference Include="..\..\AMQP\Source\AMQP.Connection.pas"/>

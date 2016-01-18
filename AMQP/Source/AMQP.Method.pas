@@ -19,7 +19,7 @@ Type
     Property MethodID : TShortUInt read FMethodID;
     Property Field[ FieldName: String ]: TAMQPValue read GetField;
     Function IsMethod( AMQPMethod: TAMQPMethodID ): Boolean;
-    Function CheckMethod( AMQPMethod: TAMQPMethodID ): Boolean;
+    Procedure CheckMethod( AMQPMethod: TAMQPMethodID );
     function FindField(FieldName: String): TAMQPValue;
     Procedure Add( AFieldName: String; AValue: TAMQPValue );
     Procedure LoadFromStream( AStream: TStream ); Override;
@@ -43,7 +43,7 @@ begin
   FFields.Add( AValue );
 end;
 
-function TAMQPMethod.CheckMethod(AMQPMethod: TAMQPMethodID): Boolean;
+procedure TAMQPMethod.CheckMethod(AMQPMethod: TAMQPMethodID);
 begin
   if not IsMethod( AMQPMethod ) then
     raise AMQPException.Create('Unexpected frame');
