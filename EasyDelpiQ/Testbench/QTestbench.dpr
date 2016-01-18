@@ -21,7 +21,9 @@ uses
   AMQP.StreamHelper in '..\..\AMQP\Source\AMQP.StreamHelper.pas',
   AMQP.Types in '..\..\AMQP\Source\AMQP.Types.pas',
   JSON in '..\..\JSON\JSON.pas',
-  WinHttp_TLB in '..\..\JSON\WinHttp_TLB.pas';
+  WinHttp_TLB in '..\..\JSON\WinHttp_TLB.pas',
+  EasyDelphiQ.Interfaces in '..\EasyDelphiQ.Interfaces.pas',
+  EasyDelphiQ.Classes in '..\EasyDelphiQ.Classes.pas';
 
 {$R *.res}
 

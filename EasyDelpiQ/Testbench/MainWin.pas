@@ -4,7 +4,7 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, EasyDelphiQ, Some.namespace;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, EasyDelphiQ, EasyDelphiQ.Interfaces, Some.namespace;
 
 type
   TMainForm = class(TForm)
@@ -12,13 +12,16 @@ type
     Memo1: TMemo;
     Button2: TButton;
     Button3: TButton;
+    Button4: TButton;
     procedure Button1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
   private
     FBus: TBus;
+    FSubscription: ISubscriptionResult;
     Procedure Handler( var Msg: TestDTO );
   public
   end;
@@ -41,8 +44,8 @@ begin
   Try
     DTO.ID := 42;
     DTO.Name := 'Zaphod';
-    Memo1.Lines.Add( 'Message published' );
     FBus.Publish( DTO );
+    Memo1.Lines.Add( 'Message published' );
   Finally
     DTO.Free;
   End;
@@ -67,12 +70,20 @@ end;
 
 procedure TMainForm.Button3Click(Sender: TObject);
 begin
-  FBus.Subscribe<TestDTO>( 'Testbench', '', Handler );
+  FSubscription := FBus.Subscribe<TestDTO>( 'Testbench', '', Handler );
+end;
+
+procedure TMainForm.Button4Click(Sender: TObject);
+begin
+  FSubscription.Cancel;
+  FSubscription := nil;
 end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
+  ReportMemoryLeaksOnShutdown := True;
   FBus := RabbitHutch.CreateBus( 'localhost', 'TestUser', 'password' );
+  FSubscription := nil;
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);

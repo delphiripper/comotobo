@@ -7,5 +7,9 @@ XPath/__history/
 XPath/TestBench/__history/
 XPath/UnitTest/__history/
 AMQP/__history/
+AMQP/source/__history/
 AMQP/Samples/Threads/__history/
 AMQP/Samples/Testbench/__history/
+EasyDelpiQ/__history/
+EasyDelpiQ/Testbench/__history
+EasyDelpiQ/Testbench/Win32

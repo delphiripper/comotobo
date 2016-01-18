@@ -53,4 +53,13 @@ object MainForm: TMainForm
     TabOrder = 3
     OnClick = Button3Click
   end
+  object Button4: TButton
+    Left = 251
+    Top = 8
+    Width = 118
+    Height = 25
+    Caption = 'Cancel subscription'
+    TabOrder = 4
+    OnClick = Button4Click
+  end
 end
