@@ -20,6 +20,7 @@ Type
     Function SubscriberID: String;
     Function Exchange: String;
     Function ClassName: String;
+    Procedure Reconnect( Channel: IAMQPChannel );
     Constructor Create( AChannel: IAMQPChannel; AName: String; ATopic: String; ASubscriberID: String; AExchange: String;
                         AClassName: String );
   End;
@@ -32,6 +33,7 @@ Type
   Public
     Function Name: String;
     Function ExchangeType: TExchangeType;
+    Procedure Reconnect( Channel: IAMQPChannel );
     Constructor Create( AChannel: IAMQPChannel; AName: String; AExchangeType: TExchangeType );
   End;
 
@@ -74,6 +76,12 @@ begin
   Result := FName;
 end;
 
+procedure TQueue.Reconnect(Channel: IAMQPChannel);
+begin
+  FChannel := nil;
+  FChannel := Channel;
+end;
+
 function TQueue.SubscriberID: String;
 begin
   Result := FSubscriberID;
@@ -101,6 +109,12 @@ end;
 function TExchange.Name: String;
 begin
   Result := FName;
+end;
+
+procedure TExchange.Reconnect(Channel: IAMQPChannel);
+begin
+  FChannel := nil;
+  FChannel := Channel;
 end;
 
 { TSubscriptionResult }

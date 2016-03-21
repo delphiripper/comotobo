@@ -12,11 +12,13 @@ Type
     Function SubscriberID: String;
     Function Exchange: String;
     Function ClassName: String;
+    Procedure Reconnect( Channel: IAMQPChannel );
   End;
 
   IExchange = Interface ['{58CB0E85-5E41-475D-BBCE-C7DCFA401AA9}']
     Function Name: String;
     Function ExchangeType: TExchangeType;
+    Procedure Reconnect( Channel: IAMQPChannel );
   End;
 
   ISubscriptionResult = Interface ['{6B4F0D36-EE7C-47EC-92B9-4A7222476054}']

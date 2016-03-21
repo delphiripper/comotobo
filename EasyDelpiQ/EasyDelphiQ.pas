@@ -11,6 +11,8 @@ Type
 
   TMessageHandler<T:Class,constructor> = Reference to Procedure( var Msg: T );
 
+  TStartSubscription = Reference to Procedure;
+
   //TBus = class(TInterfacedObject, IBus)
   TBus = class
   Private
@@ -20,6 +22,10 @@ Type
     FDeSerializer: TDeSerializer;
     FQueues: TDictionary<String,IQueue>;
     FExchanges: TDictionary<String,IExchange>;
+    FSubscriptions: TList<TStartSubscription>;
+    Function GetDefaultChannel: IAMQPChannel;
+    Procedure CheckConnection;
+    Procedure Reconnect;
   Public
     Property Connection: TAMQPConnection read FConnection;
 
@@ -31,7 +37,9 @@ Type
     Function Get<T:Class,constructor>(SubscriberID: String; Topic: String = ''): T;
     Function Subscribe<T:Class,constructor>(SubscriberID: String; MessageHandler: TMessageHandler<T>): ISubscriptionResult; Overload;
     Function Subscribe<T:Class,constructor>(SubscriberID: String; Topic: String; MessageHandler: TMessageHandler<T>): ISubscriptionResult; Overload;
-    Procedure Connect;
+
+    Procedure TestReconnect;
+
     Constructor Create;
     Destructor Destroy; override;
   end;
@@ -49,10 +57,15 @@ Uses
 
 { TBus }
 
-procedure TBus.Connect;
+procedure TBus.CheckConnection;
 begin
-  FConnection.Connect;
-  FDefaultChannel := FConnection.OpenChannel;
+  if not FConnection.IsOpen then
+  Begin
+    FConnection.Connect;
+    FDefaultChannel := FConnection.OpenChannel;
+    If (FQueues.Count > 0) or (FExchanges.Count > 0) then
+      Reconnect;
+  End;
 end;
 
 constructor TBus.Create;
@@ -61,6 +74,7 @@ begin
   FQueues := TDictionary<String,IQueue>.Create;
   FExchanges := TDictionary<String,IExchange>.Create;
   FConnection := TAMQPConnection.Create;
+  FSubscriptions := TList<TStartSubscription>.Create;
   FSerializer := Procedure( Obj: TObject; Stream: TStream )
                var
                  Str: String;
@@ -95,6 +109,7 @@ begin
   FExchanges.Free;
   FDefaultChannel := nil;
   FConnection.Free;
+  FSubscriptions.Free;
   inherited;
 end;
 
@@ -124,16 +139,22 @@ begin
   End;
 end;
 
+function TBus.GetDefaultChannel: IAMQPChannel;
+begin
+  Result := FDefaultChannel;
+end;
+
 function TBus.MakeExchange(Msg: TObject; ExchangeType: TExchangeType): IExchange;
 var
   ExchangeName: string;
 begin
+  CheckConnection;
   ExchangeName := GetExchangeName( Msg );
   if not FExchanges.TryGetValue( ExchangeName, Result ) then
   Begin
-    Result := TExchange.Create( FDefaultChannel, GetExchangeName( Msg ), ExchangeType );
+    Result := TExchange.Create( FDefaultChannel, ExchangeName, ExchangeType );
     FDefaultChannel.ExchangeDeclare( Result.Name, Result.ExchangeType );
-    FExchanges.Add( ExchangeName, Result )
+    FExchanges.Add( ExchangeName, Result );
   End;
 end;
 
@@ -144,6 +165,7 @@ var
   QueueeName: String;
   ExchangeName: String;
 begin
+  CheckConnection;
   Result := nil;
   Msg := T.Create;
   Try
@@ -177,6 +199,27 @@ begin
   End;
 end;
 
+procedure TBus.Reconnect;
+var
+  ExchangePair: TPair<String, IExchange>;
+  QueuePair: TPair<String, IQueue>;
+  Method: TStartSubscription;
+begin
+  for ExchangePair in FExchanges do
+  Begin
+    ExchangePair.Value.Reconnect( FDefaultChannel );
+    FDefaultChannel.ExchangeDeclare( ExchangePair.Value.Name, ExchangePair.Value.ExchangeType );
+  End;
+  for QueuePair in FQueues do
+  Begin
+    QueuePair.Value.Reconnect( FDefaultChannel );
+    FDefaultChannel.QueueDeclare( QueuePair.Value.Name );
+    FDefaultChannel.QueueBind( QueuePair.Value.Name, QueuePair.Value.Exchange, QueuePair.Value.Topic );
+  End;
+  for Method in FSubscriptions do
+    Method();
+end;
+
 function TBus.Subscribe<T>(SubscriberID: String; MessageHandler: TMessageHandler<T>): ISubscriptionResult;
 begin
   Result := Subscribe<T>( SubscriberID, '', MessageHandler );
@@ -185,24 +228,39 @@ end;
 function TBus.Subscribe<T>(SubscriberID, Topic: String; MessageHandler: TMessageHandler<T>): ISubscriptionResult;
 var
   Queue: IQueue;
+  QueueName: String;
+  Method: TStartSubscription;
 begin
   Queue  := MakeQueue<T>(SubscriberID, Topic);
+  QueueName := Queue.Name;
   Result := TSubscriptionResult.Create( FDefaultChannel, Queue );
-  FDefaultChannel.BasicConsume(  Procedure( AMQPMessage: TAMQPMessage; var SendAck: Boolean )
-                                 var
-                                   Msg: T;
-                                 Begin
-                                   Msg := T.Create;
-                                   Try
-                                     FDeSerializer( AMQPMessage.Body, Msg );
-                                     MessageHandler( Msg );
-                                     SendAck := True;
-                                   finally
-                                     Msg.Free;
-                                   end;
-                                 End,
-                                 Queue.Name,
-                                 SubscriberID );
+  Method := Procedure
+            Begin
+              GetDefaultChannel.BasicConsume(  Procedure( AMQPMessage: TAMQPMessage; var SendAck: Boolean )
+                                               var
+                                                 Msg: T;
+                                               Begin
+                                                 Msg := T.Create;
+                                                 Try
+                                                   FDeSerializer( AMQPMessage.Body, Msg );
+                                                   MessageHandler( Msg );
+                                                   SendAck := True;
+                                                 finally
+                                                   Msg.Free;
+                                                 end;
+                                               End,
+                                               QueueName,
+                                               SubscriberID );
+            End;
+  FSubscriptions.Add( Method );
+  Method();
+end;
+
+procedure TBus.TestReconnect;
+begin
+  FConnection.Disconnect;
+  CheckConnection;
+  //Reconnect;
 end;
 
 { RabbitHutch }
@@ -216,7 +274,6 @@ begin
     Bus.Connection.Host := Host;
     Bus.Connection.Username := Username;
     Bus.Connection.Password := Password;
-    Bus.Connect;
     Result := Bus;
     Bus := nil;
   Finally

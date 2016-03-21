@@ -62,4 +62,13 @@ object MainForm: TMainForm
     TabOrder = 4
     OnClick = Button4Click
   end
+  object Button5: TButton
+    Left = 440
+    Top = 0
+    Width = 75
+    Height = 25
+    Caption = 'Reconnect'
+    TabOrder = 5
+    OnClick = Button5Click
+  end
 end
