@@ -40,7 +40,6 @@ object ThreadSampleForm: TThreadSampleForm
     Anchors = [akTop, akRight, akBottom]
     ScrollBars = ssBoth
     TabOrder = 0
-    ExplicitLeft = 366
   end
   object MemoProducer: TMemo
     Left = 8
@@ -60,7 +59,6 @@ object ThreadSampleForm: TThreadSampleForm
     Caption = 'Consume'
     TabOrder = 2
     OnClick = ButtonStartConsumer2Click
-    ExplicitLeft = 280
   end
   object ButtonStartProducer: TButton
     Left = 8
@@ -89,7 +87,6 @@ object ThreadSampleForm: TThreadSampleForm
     Caption = 'Stop'
     TabOrder = 5
     OnClick = ButtonStopConsumer2Click
-    ExplicitLeft = 366
   end
   object SpinEditCount: TSpinEdit
     Left = 97

@@ -184,6 +184,7 @@ Type
   Public
     Property Count: Integer read GetCount;
     Property Pairs[Index: Integer]: TJSON_Pair read GetPair;
+    Function FindProperty(AName: String): TJSON_Pair;
     Procedure Add( APair: TJSON_Pair );
     Constructor Create;
     Destructor Destroy; Override;
@@ -242,7 +243,11 @@ Type
     ///	  Parses a JSON document (using TJSON) and sets the
     ///	  corresponding properties of Obj
     ///	</summary>
-    Class Procedure Parse( JSON: String; Obj: TObject );
+    Class Procedure Parse( JSON: String; Obj: TObject ); Overload;
+    ///	<summary>
+    ///	  Parses a JSON document and sets the corresponding properties of Obj
+    ///	</summary>
+    Class Procedure Parse( JSON: TJSON_Element; Obj: TObject ); Overload;
     Class Function IsDateTime( Str: String ): Boolean;
   End;
 
@@ -976,6 +981,16 @@ begin
   inherited;
 end;
 
+function TJSON_Object.FindProperty(AName: String): TJSON_Pair;
+var
+  Pair: TJSON_Pair;
+begin
+  for Pair in FList do
+    if SameText( Pair.Name, AName ) then
+      Exit( Pair );
+  Result := nil;
+end;
+
 function TJSON_Object.GetCount: Integer;
 begin
   Result := FList.Count;
@@ -1077,6 +1092,33 @@ begin
               (AType.QualifiedName = 'System.TTime') );
 end;
 
+class procedure TJSONParser.Parse(JSON: TJSON_Element; Obj: TObject);
+var
+  ListObjectDetails: TListObjectDetails;
+  ObjIsList: Boolean;
+begin
+  if not Init then
+  Begin
+    ctx := TRttiContext.Create;
+    Init := True;
+  End;
+  ObjIsList := TJSONSerializer.IsListObject( Obj, ListObjectDetails );
+  If JSON.SelfType = jtObject then
+    ParseObject( JSON as TJSON_Object, Obj )
+  else If (JSON.SelfType = jtArray) then
+  Begin
+    If ObjIsList then
+      ParseList( JSON as TJSON_Array, Obj )
+    else If (TJSON_Array(JSON).Count = 1) and
+            (TJSON_Array(JSON).Elements[0].SelfType = jtObject) then
+      ParseObject( TJSON_Array(JSON).Elements[0] as TJSON_Object, Obj )
+    else
+      raise JSONException.Create('JSON has array. Obj is not a list.');
+  End
+  else
+    raise JSONException.Create('JSON is not an object or an array');
+end;
+
 Class Function TJSONParser.ParseDateTime( S: String ): TDateTime;
 var
   y, m, d, h, min, sec, ms: Word;
@@ -1142,34 +1184,12 @@ End;
 Class procedure TJSONParser.Parse(JSON: String; Obj: TObject);
 var
   J: TJSON_Element;
-  ListObjectDetails: TListObjectDetails;
-  ObjIsList: Boolean;
 begin
-  if not Init then
-  Begin
-    ctx := TRttiContext.Create;
-    Init := True;
-  End;
   J := TJSON.ParseText( JSON );
-  ObjIsList := TJSONSerializer.IsListObject( Obj, ListObjectDetails );
   Try
-    If J.SelfType = jtObject then
-      ParseObject( J as TJSON_Object, Obj )
-    else If (J.SelfType = jtArray) then
-    Begin
-      If ObjIsList then
-        ParseList( J as TJSON_Array, Obj )
-      else If (TJSON_Array(J).Count = 1) and
-              (TJSON_Array(J).Elements[0].SelfType = jtObject) then
-        ParseObject( TJSON_Array(J).Elements[0]  as TJSON_Object, Obj )
-      else
-        raise JSONException.Create('JSON has array. Obj is not a list.');
-    End
-    else
-      raise JSONException.Create('JSON is not an object or an array');
+    Parse( J, Obj );
   Finally
     J.Free;
-    ctx.Free;
   End;
 end;
 

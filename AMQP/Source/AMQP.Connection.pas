@@ -4,7 +4,7 @@ interface
 
 Uses
   System.SysUtils, System.Classes, System.Generics.Collections, System.Generics.Defaults, System.SyncObjs, IdTcpClient, VCL.ExtCtrls,
-  AMQP.Classes, AMQP.Frame, AMQP.Header, AMQP.Method, AMQP.Protocol, AMQP.Message, AMQP.Interfaces;
+  AMQP.Classes, AMQP.Frame, AMQP.Header, AMQP.Method, AMQP.Protocol, AMQP.Message, AMQP.Interfaces, AMQP.IMessageProperties;
 
 Type
   TSendRecv = ( srSend, srReceive );
@@ -50,12 +50,17 @@ Type
     FPassword         : String;
     FVirtualHost      : String;
     FUsername         : String;
+    FClientAPI        : String;
+    FApplicationID    : String;
+    FPlatformID       : String;
+    FProductID        : String;
     FHeartbeatSecs    : Word;
     FMaxFrameSize     : Cardinal;
     FLastHeartbeat    : TDateTime;
     FOnWireDebug      : TWireEvent;
     FOnDebug          : TDebugEvent;
     FIsOpen           : Boolean;
+    FServerDisconnected: Boolean;
     FHeartbeatTimer   : TTimer;
     // get / set methods
     function GetHost: String;
@@ -69,6 +74,7 @@ Type
     function ThreadRunning: Boolean;
     Function ChannelNeedsToBeClosedOnServer( AChannel: IAMQPChannel ): Boolean;
     function MakeChannel: IAMQPChannel;
+    Procedure InternalDisconnect( ACloseConnection: Boolean );
     Procedure ProtocolError( AErrorMessage: String );
     procedure CloseAllChannels;
     procedure CloseConnection;
@@ -80,7 +86,7 @@ Type
     Procedure WriteFrame( AFrameType: Byte; AChannel: Word; APayload: TStream );
     procedure WriteHeartbeat;
     procedure WriteMethod( AChannel: Word; AMethod: TAMQPMethod );
-    procedure WriteContent( AChannel, AClassID: Word; AContent: TStream );
+    procedure WriteContent( AChannel, AClassID: Word; AContent: TStream; AProperties: IAMQPMessageProperties );
     //Debug
     procedure DumpMethod( ASendRecv: TSendRecv; AMethod: TAMQPMethod );
     procedure DumpHeader( ASendRecv: TSendRecv; AHeader: TAMQPHeader );
@@ -91,12 +97,17 @@ Type
     Property VirtualHost      : String      read FVirtualHost   write FVirtualHost;
     Property Host             : String      read GetHost        write SetHost;
     Property Port             : Word        read GetPort        write SetPort;
+    Property ClientAPI        : String      read FClientAPI     write FClientAPI;
+    Property ApplicationID    : String      read FApplicationID write FApplicationID;
+    Property ProductID        : String      read FProductID     write FProductID;
+    Property PlatformID       : String      read FPlatformID    write FPlatformID;
     Property HeartbeatSecs    : Word        read FHeartbeatSecs write FHeartbeatSecs;
     Property MaxFrameSize     : Cardinal    read FMaxFrameSize  write FMaxFrameSize;
     Property OnWireDebug      : TWireEvent  read FOnWireDebug   write FOnWireDebug;
     Property OnDebug          : TDebugEvent read FOnDebug       write FOnDebug;
     Property LastHeartbeat    : TDateTime   read FLastHeartbeat;
     Property ServerProperties : TAMQPServerProperties read FServerProperties;
+    Function DefaultMessageProperties: IAMQPMessageProperties;
     Function IsOpen: Boolean;
 
     Procedure Connect;
@@ -112,8 +123,20 @@ Type
 implementation
 
 Uses
-  IdGlobal, IdStack,
+  IdGlobal, IdStack, Forms, Windows,
   AMQP.MessageProperties, AMQP.Payload, AMQP.Helper, AMQP.StreamHelper, AMQP.Types, AMQP.Channel;
+
+function GetLocalComputerName : string;
+var
+  StrLength : dword;
+  CharArray : array [0..MAX_PATH] of char;
+begin
+  StrLength := MAX_PATH;
+  if GetComputerName(CharArray, StrLength) and (StrLength > 0) then
+    result := CharArray
+  else
+    result := '';
+end;
 
 { TAMQPConnection }
 
@@ -133,7 +156,8 @@ End;
 
 procedure TAMQPConnection.CloseChannel(AChannel: IAMQPChannel);
 begin
-  CloseChannelOnServer( AChannel );
+  if not FServerDisconnected then
+    CloseChannelOnServer( AChannel );
   AChannel.ChannelClosed;
   FChannels.Remove( AChannel );
 end;
@@ -170,10 +194,11 @@ begin
     raise AMQPException.Create('Already open');
 
   //Reset internal state
-  //FThread.Free;
-  //FThread := nil;
   FServerProperties.Free;
   FServerProperties := TAMQPServerProperties.Create;
+
+  FMainQueue.Free;
+  FMainQueue := TAMQPQueue.Create;
 
   FTCP.Connect;
   FTCP.IOHandler.Write( AMQP_Header );
@@ -186,6 +211,10 @@ begin
 
   Method := TAMQPMethod.CreateMethod( AMQP_CONNECTION_START_OK );
   Try
+    Method.Field[ 'client-properties' ].AsFieldTable.Add( 'client_api',  TLongString.Create( ClientAPI ) );
+    Method.Field[ 'client-properties' ].AsFieldTable.Add( 'product',     TLongString.Create( ProductID ) );
+    Method.Field[ 'client-properties' ].AsFieldTable.Add( 'platform',    TLongString.Create( PlatformID ) );
+    Method.Field[ 'client-properties' ].AsFieldTable.Add( 'application', TLongString.Create( ApplicationID ) );
     Method.Field[ 'response' ].AsFieldTable.Field[ 'LOGIN'    ].AsLongString.Value := FUsername;
     Method.Field[ 'response' ].AsFieldTable.Field[ 'PASSWORD' ].AsLongString.Value := FPassword;
     WriteMethod( 0, Method );
@@ -217,9 +246,9 @@ begin
   Frame := ReadMethod( AMQP_CONNECTION_OPEN_OK );
   FServerProperties.ReadConnectionOpenOK( Frame.Payload.AsMethod );
   FIsOpen := True;
+  FServerDisconnected := False;
   FHeartbeatTimer.Interval := FHeartbeatSecs * 1000;
   FHeartbeatTimer.Enabled  := True;
-//  FThread := TAMQPThread.Create( Self, FTCP, FMainQueue, FChannels );
 end;
 
 constructor TAMQPConnection.Create;
@@ -227,9 +256,14 @@ begin
   FTCP := TIdTCPClient.Create( nil );
   FTCP.Host         := 'localhost';
   FTCP.Port         := 5672;
+  FTCP.UseNagle     := False;
   FUsername         := '';
   FPassword         := '';
   FVirtualHost      := '/';
+  FClientAPI        := 'DelphiAMQP';
+  FApplicationID    := ExtractFileName(Application.ExeName);
+  FProductID        := Application.Title;
+  FPlatformID       := GetLocalComputerName;
   FChannels         := TThreadList<IAMQPChannel>.Create;
   FLastHeartbeat    := 0;
   FOnWireDebug      := nil;
@@ -242,17 +276,23 @@ begin
   FIsOpen           := False;
   FHeartbeatSecs    := 180;
   FMaxFrameSize     := 131072;
+  FServerDisconnected := False;
   FHeartbeatTimer   := TTimer.Create( nil );
   FHeartbeatTimer.Enabled  := False;
   FHeartbeatTimer.Interval := 60000;
   FHeartbeatTimer.OnTimer  := HeartbeatTimer;
 end;
 
+function TAMQPConnection.DefaultMessageProperties: IAMQPMessageProperties;
+begin
+  Result := TAMQPMessageProperties.Create( FApplicationID );
+end;
+
 destructor TAMQPConnection.Destroy;
 begin
   Try
     if FTCP.Connected then
-      Disconnect;
+      InternalDisconnect(True);
   Finally
     FThread.Free;
     FServerProperties.Free;
@@ -316,19 +356,7 @@ procedure TAMQPConnection.Disconnect;
 begin
   if not IsOpen then
     raise AMQPException.Create('Already closed');
-  FHeartbeatTimer.Enabled := False;
-  Try
-    CloseAllChannels;
-    CloseConnection;
-  Finally
-    FThread.Free;
-    FThread := nil;
-    Try
-      FTCP.Disconnect;
-    Except
-      On E: Exception do;
-    End;
-  End;
+  InternalDisconnect( True );
 end;
 
 procedure TAMQPConnection.DumpFrame(ASendRecv: TSendRecv; AStream: TStream);
@@ -437,6 +465,23 @@ begin
     FHeartbeatTimer.Enabled := False;
 end;
 
+procedure TAMQPConnection.InternalDisconnect(ACloseConnection: Boolean);
+begin
+  FHeartbeatTimer.Enabled := False;
+  Try
+    CloseAllChannels;
+    if ACloseConnection then
+      CloseConnection;
+  Finally
+    Try
+      FTCP.Disconnect;
+    Except
+      On E: Exception do; //Ignore any disconnect errors
+    End;
+    FIsOpen := False;
+  End;
+end;
+
 function TAMQPConnection.IsOpen: Boolean;
 begin
   Result := FIsOpen;
@@ -494,7 +539,7 @@ end;
 
 procedure TAMQPConnection.ProtocolError(AErrorMessage: String);
 begin
-  Disconnect;
+  InternalDisconnect(True);
   raise AMQPException.Create( AErrorMessage );
 end;
 
@@ -532,8 +577,8 @@ end;
 
 procedure TAMQPConnection.ServerDisconnect(AMessage: String);
 begin
-  FIsOpen := False;
-  FHeartbeatTimer.Enabled := False;
+  FServerDisconnected := True;
+  InternalDisconnect( False );
 end;
 
 procedure TAMQPConnection.SetHost(const Value: String);
@@ -551,24 +596,21 @@ begin
   Result := Assigned(FThread) and not FThread.Terminated;
 end;
 
-procedure TAMQPConnection.WriteContent(AChannel, AClassID: Word; AContent: TStream);
+procedure TAMQPConnection.WriteContent(AChannel, AClassID: Word; AContent: TStream; AProperties: IAMQPMessageProperties );
 Const
   WEIGHT : Byte = $00;
 Var
-  Header     : TMemoryStream;
-  Properties : TAMQPMessageProperties;
+  Header: TMemoryStream;
 begin
   //Header frame
   Header := TMemoryStream.Create;
-  Properties  := TAMQPMessageProperties.Create;
   Try
     Header.WriteUInt16( AClassID );
     Header.WriteUInt16( WEIGHT );
     Header.WriteUInt64( AContent.Size );
-    Properties.SaveToStream( Header );
+    AProperties.SaveToStream( Header );
     WriteFrame( FRAME_TYPE_HEADER, AChannel, Header );
   Finally
-    Properties.Free;
     Header.Free;
   End;
 
@@ -667,7 +709,7 @@ end;
 
 procedure TAMQPThread.Disconnect(E: Exception);
 begin
-  FConnection.Disconnect;
+  FConnection.InternalDisconnect( True );
 end;
 
 procedure TAMQPThread.Execute;
@@ -689,6 +731,7 @@ begin
     On E: Exception do
       Disconnect( E );
   End;
+  FMainQueue.Put( nil ); //Signal TAMQPConnection
 end;
 
 function TAMQPThread.FindChannel(AList: TList<IAMQPChannel>; AChannelID: Word): IAMQPChannel;
@@ -832,7 +875,8 @@ begin
       //WriteMethod( Method );
       FConnection.ServerDisconnect( Msg );
     Finally
-      FTCP.Disconnect;
+      if FTCP.Connected then
+        FTCP.Disconnect;
     End;
   Finally
     SignalCloseToChannels;

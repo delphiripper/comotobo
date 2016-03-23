@@ -3,7 +3,7 @@ unit AMQP.Header;
 interface
 
 Uses
-  System.Classes, AMQP.Payload, AMQP.MessageProperties;
+  System.Classes, AMQP.Payload, AMQP.IMessageProperties;
 
 Type
   TAMQPHeader = Class(TAMQPPayload)
@@ -11,12 +11,12 @@ Type
     FClassID      : UInt16;
     FWeight       : UInt16;
     FBodySize     : UInt64;
-    FPropertyList : TAMQPMessageProperties;
+    FPropertyList : IAMQPMessageProperties;
   Public
     Property ClassID      : UInt16                 read FClassID;
     Property Weight       : UInt16                 read FWeight;
     Property BodySize     : UInt64                 read FBodySize;
-    Property PropertyList : TAMQPMessageProperties read FPropertyList;
+    Property PropertyList : IAMQPMessageProperties read FPropertyList;
     Procedure Assign( AHeader: TAMQPHeader );
     Procedure LoadFromStream( AStream: TStream ); Override;
     Constructor Create; Override;
@@ -26,7 +26,7 @@ Type
 implementation
 
 Uses
-  AMQP.StreamHelper;
+  AMQP.MessageProperties, AMQP.StreamHelper;
 
 { TAMQPHeader }
 
@@ -45,12 +45,12 @@ begin
   FClassID       := 0;
   FWeight        := 0;
   FBodySize      := 0;
-  FPropertyList  := TAMQPMessageProperties.Create;
+  FPropertyList  := TAMQPMessageProperties.Create( 'Delphi' );
 end;
 
 destructor TAMQPHeader.Destroy;
 begin
-  FPropertyList.Free;
+  FPropertyList := nil;
   inherited;
 end;
 

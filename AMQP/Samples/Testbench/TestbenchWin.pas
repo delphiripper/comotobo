@@ -246,14 +246,14 @@ procedure TTestbenchForm.ButtonPublishBlueClick(Sender: TObject);
 begin
   if Channel = nil then
     raise Exception.Create('Channel not open');
-  Channel.BasicPublish( 'Colors', 'color.blue', 'I see cyan in your eyes!', TEncoding.ASCII );
+  Channel.BasicPublish( 'Colors', 'color.blue', 'I see cyan in your eyes!' );
 end;
 
 procedure TTestbenchForm.ButtonPublishRedClick(Sender: TObject);
 begin
   if Channel = nil then
     raise Exception.Create('Channel not open');
-  Channel.BasicPublish( 'Colors', 'color.red', 'Magenta is the word!', TEncoding.ASCII );
+  Channel.BasicPublish( 'Colors', 'color.red', 'Magenta is the word!' );
 end;
 
 procedure TTestbenchForm.ButtonPurgeRedClick(Sender: TObject);
@@ -300,11 +300,12 @@ end;
 
 procedure TTestbenchForm.ButtonConnectClick(Sender: TObject);
 begin
-  AMQP.Host        := 'localhost';
-  AMQP.Port        := 5672;
-  AMQP.VirtualHost := '/';
-  AMQP.Username    := 'TestUser';
-  AMQP.Password    := 'password';
+  AMQP.Host          := 'localhost';
+  AMQP.Port          := 5672;
+  AMQP.VirtualHost   := '/';
+  AMQP.Username      := 'TestUser';
+  AMQP.Password      := 'password';
+  AMQP.ApplicationID := 'Testbench';
   AMQP.Connect;
   MemoMessages.Lines.Add( 'AMQP.ClassName: ' + AMQP.ClassName );
   MemoMessages.Lines.Add( 'AMQP.UnitName:  ' + AMQP.UnitName );

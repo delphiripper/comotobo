@@ -4,7 +4,7 @@ interface
 
 Uses
   System.SysUtils, System.Classes, System.Generics.Collections,
-  AMQP.Method, AMQP.Frame, AMQP.Message, AMQP.Protocol, AMQP.Interfaces, AMQP.Classes;
+  AMQP.Method, AMQP.Frame, AMQP.Message, AMQP.Protocol, AMQP.Interfaces, AMQP.Classes, AMQP.IMessageProperties;
 
 Type
   TConsumer = Class
@@ -36,7 +36,7 @@ Type
     procedure RemoveConsumer( AConsumerTag: String );
     Function FindConsumer( AConsumerTag: String ): TConsumer;
     procedure WriteMethod( AMethod: TAMQPMethod );
-    procedure WriteContent( AClassID: Word; AContent: TStream );
+    procedure WriteContent( AClassID: Word; AContent: TStream; AMessageProperties: IAMQPMessageProperties );
     function ReadMethod( AExpected: Array of TAMQPMethodID ): IAMQPFrame;
     procedure CheckOpen;
     procedure ChannelClosed;
@@ -62,8 +62,10 @@ Type
     Procedure QueueDelete( AQueueName: String; AIfUnused: Boolean = True; AIfEmpty: Boolean = True; ANoWait: Boolean = False );
     Procedure QueueUnBind( AQueueName, AExchangeName, ARoutingKey: String );
 
-    Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean = False ); Overload;
-    Procedure BasicPublish( AExchange, ARoutingKey: String; Const AData: String; AEncoding: TEncoding; AMandatory: Boolean = False ); Overload;
+    Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream ); Overload;
+    Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean ); Overload;
+    Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean; AMessageProperties: IAMQPMessageProperties ); Overload;
+    Procedure BasicPublish( AExchange, ARoutingKey: String; Const AData: String; AMandatory: Boolean = False ); Overload;
     Function  BasicGet( AQueueName: String; ANoAck: Boolean = False ): TAMQPMessage;
     Procedure BasicAck( AMessage: TAMQPMessage; AMultiple: Boolean = False ); Overload;
     Procedure BasicAck( ADeliveryTag: UInt64; AMultiple: Boolean = False ); Overload;
@@ -392,15 +394,44 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.BasicPublish(AExchange, ARoutingKey: String; const AData: String; AEncoding: TEncoding; AMandatory: Boolean = False);
+procedure TAMQPChannel.BasicPublish(AExchange, ARoutingKey: String; AData: TStream);
+begin
+  BasicPublish( AExchange, ARoutingKey, AData, False );
+end;
+
+procedure TAMQPChannel.BasicPublish(AExchange, ARoutingKey: String; const AData: String; AMandatory: Boolean = False);
 var
   StringStream: TStringStream;
+  MessageProperties: IAMQPMessageProperties;
 begin
-  StringStream := TStringStream.Create( AData, AEncoding );
+  MessageProperties := FConnection.DefaultMessageProperties;
+  StringStream := TStringStream.Create( AData, TEncoding.UTF8 );
   Try
-    BasicPublish( AExchange, ARoutingKey, StringStream, AMandatory );
+    MessageProperties.&Type.Value := 'String';
+    BasicPublish( AExchange, ARoutingKey, StringStream, AMandatory, MessageProperties );
   Finally
     StringStream.Free;
+  End;
+end;
+
+procedure TAMQPChannel.BasicPublish(AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean;
+  AMessageProperties: IAMQPMessageProperties);
+var
+  Method: TAMQPMethod;
+begin
+  if AMessageProperties = nil then
+    AMessageProperties := FConnection.DefaultMessageProperties;
+  Method := TAMQPMethod.CreateMethod( AMQP_BASIC_PUBLISH );
+  Try
+    Method.Field['exchange'].AsShortString.Value    := AExchange;
+    Method.Field['routing-key'].AsShortString.Value := ARoutingKey;
+    Method.Field['mandatory'].AsBoolean.Value       := AMandatory;
+    WriteMethod(  Method );
+    WriteContent( AMQP_CLASS_BASIC, AData, AMessageProperties );
+    if FConfirmSelect then
+      ReadMethod( [ AMQP_BASIC_ACK ] );
+  Finally
+    Method.Free;
   End;
 end;
 
@@ -423,22 +454,9 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.BasicPublish(AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean = False);
-var
-  Method: TAMQPMethod;
+procedure TAMQPChannel.BasicPublish(AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean );
 begin
-  Method := TAMQPMethod.CreateMethod( AMQP_BASIC_PUBLISH );
-  Try
-    Method.Field['exchange'].AsShortString.Value    := AExchange;
-    Method.Field['routing-key'].AsShortString.Value := ARoutingKey;
-    Method.Field['mandatory'].AsBoolean.Value       := AMandatory;
-    WriteMethod(  Method );
-    WriteContent( AMQP_CLASS_BASIC, AData );
-    if FConfirmSelect then
-      ReadMethod( [ AMQP_BASIC_ACK ] );
-  Finally
-    Method.Free;
-  End;
+  BasicPublish( AExchange, ARoutingKey, AData, AMandatory, nil );
 end;
 
 function TAMQPChannel.GetQueue: TAMQPQueue;
@@ -650,10 +668,10 @@ begin
                                    [ AMethod.ClassID.Value, AMethod.MethodID.Value ] );
 end;
 
-procedure TAMQPChannel.WriteContent(AClassID: Word; AContent: TStream);
+procedure TAMQPChannel.WriteContent(AClassID: Word; AContent: TStream; AMessageProperties: IAMQPMessageProperties);
 begin
   CheckOpen;
-  FConnection.WriteContent( FID, AClassID, AContent );
+  FConnection.WriteContent( FID, AClassID, AContent, AMessageProperties );
 end;
 
 procedure TAMQPChannel.WriteMethod(AMethod: TAMQPMethod);

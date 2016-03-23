@@ -1,3 +1,5 @@
+// JCL_DEBUG_EXPERT_GENERATEJDBG OFF
+// JCL_DEBUG_EXPERT_INSERTJDBG OFF
 program Testbench;
 
 uses
@@ -16,7 +18,8 @@ uses
   AMQP.StreamHelper in '..\..\Source\AMQP.StreamHelper.pas',
   AMQP.Channel in '..\..\Source\AMQP.Channel.pas',
   AMQP.Classes in '..\..\Source\AMQP.Classes.pas',
-  AMQP.Interfaces in '..\..\Source\AMQP.Interfaces.pas';
+  AMQP.Interfaces in '..\..\Source\AMQP.Interfaces.pas',
+  AMQP.IMessageProperties in '..\..\Source\AMQP.IMessageProperties.pas';
 
 {$R *.res}
 

@@ -29,10 +29,11 @@ object MainForm: TMainForm
   end
   object Memo1: TMemo
     Left = 8
-    Top = 39
+    Top = 64
     Width = 619
-    Height = 290
+    Height = 265
     Anchors = [akLeft, akTop, akRight, akBottom]
+    ScrollBars = ssVertical
     TabOrder = 1
   end
   object Button2: TButton
@@ -62,13 +63,13 @@ object MainForm: TMainForm
     TabOrder = 4
     OnClick = Button4Click
   end
-  object Button5: TButton
-    Left = 440
-    Top = 0
+  object Subscribe: TButton
+    Left = 170
+    Top = 33
     Width = 75
     Height = 25
-    Caption = 'Reconnect'
+    Caption = 'Subscribe'
     TabOrder = 5
-    OnClick = Button5Click
+    OnClick = SubscribeClick
   end
 end

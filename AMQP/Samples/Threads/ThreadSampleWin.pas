@@ -214,7 +214,7 @@ begin
     Repeat
       Work := 'Work unit ' + Counter.ToString;
       WriteLine( 'Produced: ' + Work );
-      Channel.BasicPublish( 'Work', 'work.unit', Work, TEncoding.ASCII );
+      Channel.BasicPublish( 'Work', 'work.unit', Work );
       Inc( Counter );
       Sleep( FSleepMS );
     Until Terminated or (Counter > FMaxWork);

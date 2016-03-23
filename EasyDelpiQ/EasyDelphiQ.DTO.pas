@@ -11,16 +11,37 @@ Type
     constructor create(AName: String);
   end;
 
-Function GetAssemblyName( Obj: TObject ): String;
-Function GetExchangeName( Obj: TObject ): String;
-Function GetQueueeName( Obj: TObject; SubscriberID: String ): String;
+  TClassInformation = record
+  Private
+    FClassName: String;
+    FUnitName: String;
+    FAssemblyName: String;
+    Function GetAssemblyNameFromRTI( Obj: TObject ): String;
+  Public
+    Function GetAssemblyName: String;
+    Function GetQueueName(ASubscriberID: String): String;
+    Function GetExchangeName: String;
+    Function GetUnitName: String;
+    Function GetClassName: String;
+    Function GetFullyQualifiedClassName: String;
+    Constructor Create( Obj: TObject );
+  end;
 
 implementation
 
 uses
   System.Rtti;
 
-Function GetAssemblyName( Obj: TObject ): String;
+{ AssemblyNameAttribute }
+
+constructor AssemblyNameAttribute.create(AName: String);
+begin
+  FName := AName;
+end;
+
+{ TClassInformation }
+
+Function TClassInformation.GetAssemblyNameFromRTI( Obj: TObject ): String;
 var
   ctx: TRttiContext;
   T: TRttiType;
@@ -37,21 +58,41 @@ Begin
   End;
 End;
 
-Function GetExchangeName( Obj: TObject ): String;
-Begin
-  Result := Obj.UnitName + '_' + Obj.ClassName + ':' + GetAssemblyName( Obj );
-End;
-
-Function GetQueueeName( Obj: TObject; SubscriberID: String ): String;
-Begin
-  Result := Obj.UnitName + '_' + Obj.ClassName + ':' + GetAssemblyName( Obj ) + '_' + SubscriberID;
-End;
-
-{ Assembly }
-
-constructor AssemblyNameAttribute.create(AName: String);
+constructor TClassInformation.Create(Obj: TObject);
 begin
-  FName := AName;
+  FUnitName     := Obj.UnitName;
+  FClassName    := Obj.ClassName;
+  FAssemblyName := GetAssemblyNameFromRTI( Obj );
+end;
+
+function TClassInformation.GetAssemblyName: String;
+begin
+  Result := FAssemblyName;
+end;
+
+function TClassInformation.GetClassName: String;
+begin
+  Result := FClassName;
+end;
+
+function TClassInformation.GetExchangeName: String;
+begin
+  Result := GetFullyQualifiedClassName + ':' + FAssemblyName;
+end;
+
+function TClassInformation.GetFullyQualifiedClassName: String;
+begin
+  Result := FUnitName + '.' + FClassName;
+end;
+
+function TClassInformation.GetQueueName(ASubscriberID: String): String;
+begin
+  Result := FUnitName + '_' + FClassName + ':' + FAssemblyName + '_' + ASubscriberID;
+end;
+
+function TClassInformation.GetUnitName: String;
+begin
+  Result := FUnitName;
 end;
 
 end.

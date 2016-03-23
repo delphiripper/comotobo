@@ -3,10 +3,10 @@ unit AMQP.MessageProperties;
 interface
 
 Uses
-  System.Classes, AMQP.Types;
+  System.Classes, AMQP.Types, AMQP.IMessageProperties;
 
 Type
-  TAMQPMessageProperties = class
+  TAMQPMessageProperties = class(TInterfacedObject, IAMQPMessageProperties)
   Strict Private
     FContentType        : TShortString;    //MIME content type, e.g. 'application/json'
     FContentEncoding    : TShortString;    //MIME content encoding, e.g. 'utf8'
@@ -21,26 +21,27 @@ Type
     FType               : TShortString;    //message type name
     FUserID             : TShortString;    //creating user id
     FAppID              : TShortString;    //creating application id
-    FReserved           : TShortString;    //reserved, must be empty
+    FReserved           : TShortString;    //reserved, must be empty (ClusterID ?)
+  Protected
+    Function ContentType        : TShortString;
+    Function ContentEncoding    : TShortString;
+    Function ApplicationHeaders : TFieldTable;
+    Function DeliveryMode       : TShortShortUInt;
+    Function Priority           : TShortShortUInt;
+    Function CorrelationID      : TShortString;
+    Function ReplyTo            : TShortString;
+    Function Expiration         : TShortString;
+    Function MessageID          : TShortString;
+    Function Timestamp          : TTimestamp;
+    Function &Type              : TShortString;
+    Function UserID             : TShortString;
+    Function AppID              : TShortString;
+    Function Reserved           : TShortString;
   Public
-    Property ContentType        : TShortString    read FContentType;
-    Property ContentEncoding    : TShortString    read FContentEncoding;
-    Property ApplicationHeaders : TFieldTable     read FApplicationHeaders;
-    Property DeliveryMode       : TShortShortUInt read FDeliveryMode;
-    Property Priority           : TShortShortUInt read FPriority;
-    Property CorrelationID      : TShortString    read FCorrelationID;
-    Property ReplyTo            : TShortString    read FReplyTo;
-    Property Expiration         : TShortString    read FExpiration;
-    Property MessageID          : TShortString    read FMessageID;
-    Property Timestamp          : TTimestamp      read FTimestamp;
-    Property &Type              : TShortString    read FType;
-    Property UserID             : TShortString    read FUserID;
-    Property AppID              : TShortString    read FAppID;
-    Property Reserved           : TShortString    read FReserved; //ClusterID ?
     Procedure SaveToStream( AStream: TStream );
     Procedure LoadFromStream( AStream: TStream );
-    Procedure Assign( AMessageProperties: TAMQPMessageProperties );
-    Constructor Create;
+    Procedure Assign( AMessageProperties: IAMQPMessageProperties );
+    Constructor Create( const AApplicationID: String );
     Destructor Destroy; Override;
   end;
 
@@ -51,7 +52,7 @@ Uses
 
 { TAMQPMessageProperties }
 
-procedure TAMQPMessageProperties.Assign(AMessageProperties: TAMQPMessageProperties);
+procedure TAMQPMessageProperties.Assign(AMessageProperties: IAMQPMessageProperties);
 begin
   FContentType.Value     := AMessageProperties.ContentType.Value;
   FContentEncoding.Value := AMessageProperties.ContentEncoding.Value;
@@ -69,10 +70,10 @@ begin
   FReserved.Value        := AMessageProperties.Reserved.Value;
 end;
 
-constructor TAMQPMessageProperties.Create;
+constructor TAMQPMessageProperties.Create(const AApplicationID: String);
 begin
   FContentType        := TShortString.Create( 'text/plain' );
-  FContentEncoding    := TShortString.Create( 'utf8' );
+  FContentEncoding    := TShortString.Create( 'utf-8' );
   FApplicationHeaders := TFieldTable.Create;
   FDeliveryMode       := TShortShortUInt.Create( 2 );
   FPriority           := TShortShortUInt.Create( 1 );
@@ -83,7 +84,7 @@ begin
   FTimestamp          := TLongLongUInt.Create( 0 );
   FType               := TShortString.Create( '' );
   FUserID             := TShortString.Create( '' );
-  FAppID              := TShortString.Create( 'Delphi' );
+  FAppID              := TShortString.Create( AApplicationID );
   FReserved           := TShortString.Create( '' );
 end;
 
@@ -104,6 +105,76 @@ begin
   FAppID.Free;
   FReserved.Free;
   inherited;
+end;
+
+function TAMQPMessageProperties.AppID: TShortString;
+begin
+  Result := FAppID;
+end;
+
+function TAMQPMessageProperties.ApplicationHeaders: TFieldTable;
+begin
+  Result := FApplicationHeaders;
+end;
+
+function TAMQPMessageProperties.ContentEncoding: TShortString;
+begin
+  Result := FContentEncoding;
+end;
+
+function TAMQPMessageProperties.ContentType: TShortString;
+begin
+  Result := FContentType;
+end;
+
+function TAMQPMessageProperties.CorrelationID: TShortString;
+begin
+  Result := FCorrelationID;
+end;
+
+function TAMQPMessageProperties.DeliveryMode: TShortShortUInt;
+begin
+  Result := FDeliveryMode;
+end;
+
+function TAMQPMessageProperties.Expiration: TShortString;
+begin
+  Result := FExpiration;
+end;
+
+function TAMQPMessageProperties.MessageID: TShortString;
+begin
+  Result := FMessageID;
+end;
+
+function TAMQPMessageProperties.Priority: TShortShortUInt;
+begin
+  Result := FPriority;
+end;
+
+function TAMQPMessageProperties.ReplyTo: TShortString;
+begin
+  Result := FReplyTo;
+end;
+
+function TAMQPMessageProperties.Reserved: TShortString;
+begin
+  Result := FReplyTo;
+end;
+
+function TAMQPMessageProperties.Timestamp: TTimestamp;
+begin
+  Result := FTimestamp;
+end;
+
+function TAMQPMessageProperties.&Type: TShortString;
+begin
+  Result := FType;
+end;
+
+function TAMQPMessageProperties.UserID: TShortString;
+begin
+  Result := FUserID;
 end;
 
 procedure TAMQPMessageProperties.LoadFromStream(AStream: TStream);

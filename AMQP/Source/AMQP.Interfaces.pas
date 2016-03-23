@@ -3,7 +3,7 @@ unit AMQP.Interfaces;
 interface
 
 Uses
-  System.SysUtils, System.Classes, AMQP.Classes, AMQP.Method, AMQP.Message, AMQP.Frame;
+  System.SysUtils, System.Classes, AMQP.Classes, AMQP.Method, AMQP.Message, AMQP.Frame, AMQP.IMessageProperties;
 
 Type
   TAMQPChannelState = ( cOpen, cClosed );
@@ -35,8 +35,11 @@ Type
     Procedure QueueDelete( AQueueName: String; AIfUnused: Boolean = True; AIfEmpty: Boolean = True; ANoWait: Boolean = False );
     Procedure QueueUnBind( AQueueName, AExchangeName, ARoutingKey: String );
 
-    Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean = False ); Overload;
-    Procedure BasicPublish( AExchange, ARoutingKey: String; Const AData: String; AEncoding: TEncoding; AMandatory: Boolean = False ); Overload;
+    Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream ); Overload;
+    Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean ); Overload;
+    Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean; AMessageProperties: IAMQPMessageProperties ); Overload;
+    Procedure BasicPublish( AExchange, ARoutingKey: String; Const AData: String; AMandatory: Boolean = False ); Overload;
+
     Function  BasicGet( AQueueName: String; ANoAck: Boolean = False ): TAMQPMessage;
     Procedure BasicAck( AMessage: TAMQPMessage; AMultiple: Boolean = False ); Overload;
     //Procedure BasicAck( ADeliveryTag: UInt64; AMultiple: Boolean = False ); Overload;
@@ -57,13 +60,14 @@ Type
 
   IAMQPConnection = interface ['{4736645E-A4E1-4E3B-B1D5-BC218A6C6CCC}']
     Function IsOpen: Boolean;
-    Procedure WriteFrame( AFrameType: Byte; AChannel: Word; APayload: TStream );
-    procedure WriteMethod( AChannel: Word; AMethod: TAMQPMethod );
-    procedure WriteContent( AChannel, AClassID: Word; AContent: TStream );
+    Function DefaultMessageProperties: IAMQPMessageProperties;
+    Procedure WriteFrame( FrameType: Byte; Channel: Word; Payload: TStream );
+    procedure WriteMethod( Channel: Word; Method: TAMQPMethod );
+    procedure WriteContent( Channel, ClassID: Word; Content: TStream; MessageProperties: IAMQPMessageProperties );
     Procedure HeartbeatReceived;
-    Procedure Disconnect;
+    Procedure InternalDisconnect( CloseConnection: Boolean );
     Procedure ServerDisconnect( Msg: String );
-    Procedure CloseChannel( AChannel: IAMQPChannel );
+    Procedure CloseChannel( Channel: IAMQPChannel );
   end;
 
 implementation

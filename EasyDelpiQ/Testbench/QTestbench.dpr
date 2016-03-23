@@ -1,3 +1,5 @@
+// JCL_DEBUG_EXPERT_GENERATEJDBG OFF
+// JCL_DEBUG_EXPERT_INSERTJDBG OFF
 program QTestbench;
 
 uses
@@ -23,13 +25,16 @@ uses
   JSON in '..\..\JSON\JSON.pas',
   WinHttp_TLB in '..\..\JSON\WinHttp_TLB.pas',
   EasyDelphiQ.Interfaces in '..\EasyDelphiQ.Interfaces.pas',
-  EasyDelphiQ.Classes in '..\EasyDelphiQ.Classes.pas';
+  EasyDelphiQ.Classes in '..\EasyDelphiQ.Classes.pas',
+  Neas.PowermanApi.Notifications.DTOs.V1 in 'Neas.PowermanApi.Notifications.DTOs.V1.pas',
+  AMQP.IMessageProperties in '..\..\AMQP\Source\AMQP.IMessageProperties.pas';
 
 {$R *.res}
 
 begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
+  Application.Title := 'AMQP Testbench';
   Application.CreateForm(TMainForm, MainForm);
   Application.Run;
 end.
