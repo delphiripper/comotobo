@@ -33,6 +33,7 @@ type
     Procedure Handler( var Msg: TestDTO );
     Procedure HandlerPM( var Msg: ProductionGroupDataSerieCollectionV1 );
     Procedure WMUSER(var Msg: TMessage); Message WM_USER;
+    procedure ReadMessagesFromList;
   public
   end;
 
@@ -102,7 +103,7 @@ end;
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
   ReportMemoryLeaksOnShutdown := True;
-  FBus := RabbitHutch.CreateBus( 'localhost', 'TestUser', 'password' );
+  FBus := RabbitHutch.CreateBus( 'host=localhost;username=TestUser;password=password' );
   FBus.OnConnected := BusConnected;
   FBus.OnDisconnected := BusDisconnected;
   FSubscription := nil;
@@ -151,19 +152,24 @@ begin
 end;
 
 procedure TMainForm.WMUSER(var Msg: TMessage);
+begin
+  ReadMessagesFromList;
+end;
+
+procedure TMainForm.ReadMessagesFromList;
 var
-  DSList: ProductionGroupDataSerieCollectionV1;
-  Dataseries: ProductionGroupDataSerieV1;
   List: TList<ProductionGroupDataSerieCollectionV1>;
+  Msg: ProductionGroupDataSerieCollectionV1;
+  Dataseries: ProductionGroupDataSerieV1;
 begin
   List := FList.LockList;
   Try
-    for DSList in List do
+    for Msg in List do
     Begin
-      Memo1.Lines.Add( 'Powerman Notification (' + DSList.Count.ToString + ' dataseries)' );
-      for Dataseries in DSList do
+      Memo1.Lines.Add( 'Powerman Notification (' + Msg.Count.ToString + ' dataseries)' );
+      for Dataseries in Msg do
         Memo1.Lines.Add( TJSONSerializer.Serialize(Dataseries) );
-      DSList.Free;
+      Msg.Free;
     End;
     List.Clear;
   Finally

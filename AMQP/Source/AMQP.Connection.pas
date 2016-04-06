@@ -120,6 +120,8 @@ Type
     Destructor Destroy; Override;
   End;
 
+function GetLocalComputerName : string;
+
 implementation
 
 Uses
