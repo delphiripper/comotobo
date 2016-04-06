@@ -1,6 +1,8 @@
 *.identcache
 *.local
 *.dcu
+*.stat
+*.dsk
 JSON/__history/
 XPath/UnitTest/Win32/Debug/dunit.ini
 XPath/__history/
