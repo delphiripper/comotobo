@@ -108,12 +108,12 @@
         <DCCReference Include="..\..\AMQP\Source\AMQP.Protocol.pas"/>
         <DCCReference Include="..\..\AMQP\Source\AMQP.StreamHelper.pas"/>
         <DCCReference Include="..\..\AMQP\Source\AMQP.Types.pas"/>
-        <DCCReference Include="..\..\JSON\JSON.pas"/>
         <DCCReference Include="..\..\JSON\WinHttp_TLB.pas"/>
         <DCCReference Include="..\EasyDelphiQ.Interfaces.pas"/>
         <DCCReference Include="..\EasyDelphiQ.Classes.pas"/>
         <DCCReference Include="Neas.PowermanApi.Notifications.DTOs.V1.pas"/>
         <DCCReference Include="..\..\AMQP\Source\AMQP.IMessageProperties.pas"/>
+        <DCCReference Include="..\..\JSON\DJSON.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

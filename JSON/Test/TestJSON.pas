@@ -3,7 +3,7 @@ unit TestJSON;
 interface
 
 uses
-  TestFramework, System.SysUtils, System.Generics.Collections, System.Rtti, JSON, TestObjects;
+  TestFramework, System.SysUtils, System.Generics.Collections, System.Rtti, DJSON, TestObjects;
 
 type
   TestTJSONElements = class(TTestCase)

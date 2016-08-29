@@ -102,7 +102,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="TestJSON.pas"/>
-        <DCCReference Include="..\JSON.pas"/>
+        <DCCReference Include="..\DJSON.pas"/>
         <DCCReference Include="TestObjects.pas"/>
         <DCCReference Include="..\WinHttp_TLB.pas"/>
         <BuildConfiguration Include="Release">

@@ -1,8 +1,8 @@
 # comotobo
 The Code Monkeys ToolBox for Delphi is a small collections of units for Delphi.
 
-## JSON
-The JSON unit makes reading and writing JSON easy (using RTTI).
+## DJSON
+The DJSON unit makes reading and writing JSON easy (using RTTI).
 
 For example; parsing JSON array of objects directly into a TObjectList<>:
 ```Delphi

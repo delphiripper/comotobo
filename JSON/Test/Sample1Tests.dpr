@@ -8,7 +8,7 @@ uses
   FastMM4,
   DUnitTestRunner,
   TestJSON in 'TestJSON.pas',
-  JSON in '..\JSON.pas',
+  DJSON in '..\DJSON.pas',
   TestObjects in 'TestObjects.pas',
   WinHttp_TLB in '..\WinHttp_TLB.pas';
 

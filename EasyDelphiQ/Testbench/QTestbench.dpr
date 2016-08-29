@@ -22,12 +22,12 @@ uses
   AMQP.Protocol in '..\..\AMQP\Source\AMQP.Protocol.pas',
   AMQP.StreamHelper in '..\..\AMQP\Source\AMQP.StreamHelper.pas',
   AMQP.Types in '..\..\AMQP\Source\AMQP.Types.pas',
-  JSON in '..\..\JSON\JSON.pas',
   WinHttp_TLB in '..\..\JSON\WinHttp_TLB.pas',
   EasyDelphiQ.Interfaces in '..\EasyDelphiQ.Interfaces.pas',
   EasyDelphiQ.Classes in '..\EasyDelphiQ.Classes.pas',
   Neas.PowermanApi.Notifications.DTOs.V1 in 'Neas.PowermanApi.Notifications.DTOs.V1.pas',
-  AMQP.IMessageProperties in '..\..\AMQP\Source\AMQP.IMessageProperties.pas';
+  AMQP.IMessageProperties in '..\..\AMQP\Source\AMQP.IMessageProperties.pas',
+  DJSON in '..\..\JSON\DJSON.pas';
 
 {$R *.res}
 

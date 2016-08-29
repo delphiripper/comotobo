@@ -93,7 +93,8 @@ var
 begin
   ReadUInt32( Len );
   SetLength( Str, Len );
-  Read( Str[1], Len );
+  if Len > 0 then
+    Read( Str[1], Len );
   S := String( Str );
 end;
 
@@ -117,7 +118,8 @@ var
 begin
   ReadUInt8( Len );
   SetLength( Str, Len );
-  Read( Str[1], Len );
+  if Len > 0 then
+    Read( Str[1], Len );
   S := String( Str );
 end;
 

@@ -20,6 +20,8 @@ Type
 
   TStartSubscription = Reference to Procedure;
 
+  TOnDataReceivedEvent = Procedure( Sender: TObject; Const DataStr: String ) of object;
+
   //TBus = class(TInterfacedObject, IBus)
   TBus = class
   Private
@@ -34,6 +36,7 @@ Type
     FSubscriptions: TList<TStartSubscription>;
     FOnConnected: TNotifyEvent;
     FOnDisconnected: TNotifyEvent;
+    FOnDataReceived: TOnDataReceivedEvent;
     Function GetClassInformation<T: Class,constructor>: TClassInformation;
     Function GetDefaultChannel: IAMQPChannel;
     Procedure ConnectTimerOnTTimer(Sende: TObject);
@@ -41,10 +44,12 @@ Type
     Procedure Reconnect;
     Procedure DoConnected;
     Procedure DoDisconnected;
+    Procedure ReceiveData( Const DataStr: String );
     Property Connection: TAMQPConnection read FConnection;
   Public
     Property OnConnected    : TNotifyEvent read FOnConnected    write FOnConnected;
     Property OnDisconnected : TNotifyEvent read FOnDisconnected write FOnDisconnected;
+    Property OnDataReceived : TOnDataReceivedEvent read FOnDataReceived write FOnDataReceived;
 
     Function MakeQueue(QueueName, ExchangeName, SubscriberID, Topic, DTOClassName: String): IQueue; Overload;
     Function MakeQueue<T:Class,constructor>(SubscriberID: String = ''; Topic: String = ''): IQueue; Overload;
@@ -103,7 +108,7 @@ Type
 implementation
 
 Uses
-  System.SysUtils, System.TypInfo, EasyDelphiQ.Classes, JSON, AMQP.Message, AMQP.IMessageProperties;
+  System.SysUtils, System.TypInfo, EasyDelphiQ.Classes, DJSON, AMQP.Message, AMQP.IMessageProperties;
 
 { TBus }
 
@@ -117,13 +122,18 @@ begin
       DoDisconnected;
     End;
 
-    FConnection.Connect;
-    FWasConnected := True;
-    FConnectTimer.Enabled := True;
-    FDefaultChannel := FConnection.OpenChannel;
-    If (FQueues.Count > 0) or (FExchanges.Count > 0) then
-      Reconnect;
-    DoConnected;
+    Try
+      FConnection.Connect;
+      FWasConnected := True;
+      FConnectTimer.Enabled := True;
+      FDefaultChannel := FConnection.OpenChannel;
+      If (FQueues.Count > 0) or (FExchanges.Count > 0) then
+        Reconnect;
+      DoConnected;
+    Except
+      On E: Exception do
+        raise EEasyDelphiQConnectionFailed.Create('Connect failed: ' + E.Message);
+    End;
   End;
 end;
 
@@ -141,6 +151,7 @@ begin
   FDefaultChannel := nil;
   FOnConnected := nil;
   FOnDisconnected := nil;
+  FOnDataReceived := nil;
   FWasConnected := False;
   FConnectTimer := TTimer.Create(nil);
   FConnectTimer.OnTimer := ConnectTimerOnTTimer;
@@ -168,12 +179,15 @@ begin
                    var
                      StrStream: TStringStream;
                      JSON: TJSON_Element;
+                     DataStr: String;
                    Begin
                      JSON := nil;
                      StrStream := TStringStream.Create( '', TEncoding.UTF8 );
                      Try
                        StrStream.CopyFrom( Stream, 0 );
-                       JSON := TJSON.ParseText( StrStream.DataString );
+                       DataStr := StrStream.DataString;
+                       Self.ReceiveData( DataStr );
+                       JSON := TJSON.ParseText( DataStr );
                        //EasyNetQ encapsulation:
                        if JSON.IsObject and
                           (JSON.AsObject.FindProperty('Data') <> nil) and
@@ -313,6 +327,12 @@ begin
   Finally
     Stream.Free;
   End;
+end;
+
+procedure TBus.ReceiveData(const DataStr: String);
+begin
+  if Assigned(FOnDataReceived) then
+    FOnDataReceived( Self, DataStr );
 end;
 
 procedure TBus.Reconnect;

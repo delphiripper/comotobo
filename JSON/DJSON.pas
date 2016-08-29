@@ -53,7 +53,7 @@
                   * Indy HTTP replaced by WinHttp (allows automatic windows authentication)
 
 }
-unit JSON;
+unit DJSON;
 
 interface
 

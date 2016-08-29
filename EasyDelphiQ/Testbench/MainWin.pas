@@ -43,7 +43,7 @@ var
 implementation
 
 Uses
-  EasyDelphiQ.DTO, JSON;
+  EasyDelphiQ.DTO, DJSON;
 
 {$R *.dfm}
 

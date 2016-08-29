@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.StdCtrls, Vcl.Forms, Vcl.Dialogs, Vcl.Grids, Vcl.ExtCtrls, System.Generics.Collections,
-  System.Diagnostics, TimeseriesDTO, JSON;
+  System.Diagnostics, TimeseriesDTO, DJSON;
 
 type
   TStuff = Class

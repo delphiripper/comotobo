@@ -102,7 +102,7 @@
             <Form>Form1</Form>
         </DCCReference>
         <DCCReference Include="TimeseriesDTO.pas"/>
-        <DCCReference Include="JSON.pas"/>
+        <DCCReference Include="DJSON.pas"/>
         <DCCReference Include="JSON2DTO.pas"/>
         <DCCReference Include="DTO.pas"/>
         <None Include="Profiling\AQtimeModule1.aqt"/>

@@ -3,9 +3,11 @@ unit EasyDelphiQ.Classes;
 interface
 
 Uses
-  AMQP.Interfaces, EasyDelphiQ.Interfaces;
+  System.SysUtils, AMQP.Interfaces, EasyDelphiQ.Interfaces;
 
 Type
+  EEasyDelphiQConnectionFailed = Class(Exception);
+
   TQueue = class(TInterfacedObject, IQueue)
   Private
     FChannel: IAMQPChannel;
@@ -121,7 +123,12 @@ end;
 
 procedure TSubscriptionResult.Cancel;
 begin
-  FChannel.BasicCancel( FQueue.SubscriberID );
+  Try
+    FChannel.BasicCancel( FQueue.SubscriberID );
+  Except
+    On E: Exception do
+      ; //If subscription does not exist then ignore (if we, for instance, have been disconnected already)
+  End;
 end;
 
 constructor TSubscriptionResult.Create(AChannel: IAMQPChannel; AQueue: IQueue);
