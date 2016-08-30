@@ -3,7 +3,7 @@ unit AMQP.Interfaces;
 interface
 
 Uses
-  System.SysUtils, System.Classes, AMQP.Classes, AMQP.Method, AMQP.Message, AMQP.Frame, AMQP.IMessageProperties;
+  System.SysUtils, System.Classes, AMQP.Classes, AMQP.Method, AMQP.Message, AMQP.Frame, AMQP.IMessageProperties, AMQP.Arguments;
 
 Type
   TAMQPChannelState = ( cOpen, cClosed );
@@ -29,7 +29,7 @@ Type
     Procedure ExchangeDeclare( AExchangeName: String; AType: TExchangeType; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False ); overload;
     Procedure ExchangeDelete( AExchangeName: String; AIfUnused: Boolean = True; ANoWait: Boolean = False );
     Procedure QueueDeclare( AQueueName: String; APassive: Boolean = False; ADurable: Boolean = True; AExclusive: Boolean = False;
-                            AAutoDelete: Boolean = False; ANoWait: Boolean = False );
+                            AAutoDelete: Boolean = False; ANoWait: Boolean = False; Arguments: TArguments = [] );
     Procedure QueueBind( AQueueName, AExchangeName, ARoutingKey: String; ANoWait: Boolean = False );
     Procedure QueuePurge( AQueueName: String; ANoWait: Boolean = False );
     Procedure QueueDelete( AQueueName: String; AIfUnused: Boolean = True; AIfEmpty: Boolean = True; ANoWait: Boolean = False );

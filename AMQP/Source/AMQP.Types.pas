@@ -3,7 +3,7 @@ unit AMQP.Types;
 interface
 
 Uses
-  System.SysUtils, System.Classes, System.Generics.Collections, AMQP.StreamHelper;
+  System.SysUtils, System.Classes, System.Generics.Collections, AMQP.StreamHelper, AMQP.Arguments;
 
 const
   NewLine = #13#10;
@@ -214,7 +214,8 @@ Type
     Procedure Add( ANameValue: TFieldValuePair ); Overload;
     Procedure Add( AName: String; AValue: TAMQPValue ); Overload;
     Procedure Clear;
-    Procedure Assign( AFieldTable: TFieldTable );
+    Procedure Assign( AFieldTable: TFieldTable ); Overload;
+    Procedure Assign( AArguments: TArguments ); Overload;
     function AsString( AIndent: String ): String; Override;
     Function GetEnumerator: TEnumerator<TFieldValuePair>;
 
@@ -230,7 +231,7 @@ Function PadRight( S: String; PaddedLength: Integer ): String;
 implementation
 
 Uses
-  System.Math;
+  System.Math, System.Variants;
 
 type
   PByteArray = ^TByteArray;
@@ -285,6 +286,39 @@ begin
   Finally
     Stream.Free;
   End;
+end;
+
+procedure TFieldTable.Assign(AArguments: TArguments);
+
+  Function MakeValue( AValue: Variant ): TAMQPValue;
+  var
+    BasicType: Integer;
+  begin
+    BasicType := VarType(AValue) and VarTypeMask;
+    case BasicType of
+      varBoolean   : Result := TBoolean.Create(AValue);
+      varSmallInt,
+      varByte,
+      varShortInt  : Result := TShortInt.Create(AValue);
+      varWord,
+      varInteger   : Result := TLongInt.Create(AValue);
+      varLongWord,
+      varInt64     : Result := TLongLongInt.Create(AValue);
+      varString    : If Length(AValue) <= 255 then
+                       Result := TShortString.Create(AValue)
+                     else
+                       Result := TLongString.Create(AValue);
+    else
+      raise EInvalidArgument.Create('Unsupported variant type in TArguments');
+    end;
+  end;
+
+var
+  Argument: TArgument;
+begin
+  Clear;
+  for Argument in AArguments do
+    Add( TFieldValuePair.Create( Argument.Name, MakeValue( Argument.Value ) ) );
 end;
 
 function TFieldTable.AsString(AIndent: String): String;

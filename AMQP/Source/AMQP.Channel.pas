@@ -4,7 +4,7 @@ interface
 
 Uses
   System.SysUtils, System.Classes, System.Generics.Collections,
-  AMQP.Method, AMQP.Frame, AMQP.Message, AMQP.Protocol, AMQP.Interfaces, AMQP.Classes, AMQP.IMessageProperties;
+  AMQP.Method, AMQP.Frame, AMQP.Message, AMQP.Protocol, AMQP.Interfaces, AMQP.Classes, AMQP.IMessageProperties, AMQP.Arguments;
 
 Type
   TConsumer = Class
@@ -56,7 +56,7 @@ Type
     Procedure ExchangeDeclare( AExchangeName: String; AType: TExchangeType; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False ); overload;
     Procedure ExchangeDelete( AExchangeName: String; AIfUnused: Boolean = True; ANoWait: Boolean = False );
     Procedure QueueDeclare( AQueueName: String; APassive: Boolean = False; ADurable: Boolean = True; AExclusive: Boolean = False;
-                            AAutoDelete: Boolean = False; ANoWait: Boolean = False );
+                            AAutoDelete: Boolean = False; ANoWait: Boolean = False; Arguments: TArguments = [] );
     Procedure QueueBind( AQueueName, AExchangeName, ARoutingKey: String; ANoWait: Boolean = False );
     Procedure QueuePurge( AQueueName: String; ANoWait: Boolean = False );
     Procedure QueueDelete( AQueueName: String; AIfUnused: Boolean = True; AIfEmpty: Boolean = True; ANoWait: Boolean = False );
@@ -516,7 +516,7 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.QueueDeclare(AQueueName: String; APassive, ADurable, AExclusive, AAutoDelete, ANoWait: Boolean);
+procedure TAMQPChannel.QueueDeclare(AQueueName: String; APassive, ADurable, AExclusive, AAutoDelete, ANoWait: Boolean; Arguments: TArguments);
 var
   Method: TAMQPMethod;
 begin
@@ -528,6 +528,7 @@ begin
     Method.Field['exclusive' ].AsBoolean.Value   := AExclusive;
     Method.Field['auto-delete' ].AsBoolean.Value := AAutoDelete;
     Method.Field['no-wait' ].AsBoolean.Value     := ANoWait;
+    Method.Field['arguments'].AsFieldTable.Assign( Arguments );
     WriteMethod( Method );
 
     if not ANoWait then

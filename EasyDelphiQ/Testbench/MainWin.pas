@@ -43,7 +43,7 @@ var
 implementation
 
 Uses
-  EasyDelphiQ.DTO, DJSON;
+  EasyDelphiQ.DTO, AMQP.Arguments, DJSON;
 
 {$R *.dfm}
 
@@ -91,7 +91,7 @@ end;
 
 procedure TMainForm.Button3Click(Sender: TObject);
 begin
-  FSubscription := FBus.Subscribe<TestDTO>( 'Testbench', '', Handler );
+  FSubscription := FBus.Subscribe<TestDTO>( 'Testbench', '', Handler, Arguments.SetMessageTTL( 30000 ) );
 end;
 
 procedure TMainForm.Button4Click(Sender: TObject);
@@ -148,7 +148,8 @@ end;
 
 procedure TMainForm.SubscribeClick(Sender: TObject);
 begin
-  FSubscriptionPM := FBusPM.Subscribe<ProductionGroupDataSerieCollectionV1>( 'NexusDevTest', 'PowermanTest', '', HandlerPM );
+  FSubscriptionPM := FBusPM.Subscribe<ProductionGroupDataSerieCollectionV1>( 'NexusDevTest', 'PowermanTest', '', HandlerPM,
+                       Arguments.Add( 'x-message-ttl', 20000 ) );
 end;
 
 procedure TMainForm.WMUSER(var Msg: TMessage);

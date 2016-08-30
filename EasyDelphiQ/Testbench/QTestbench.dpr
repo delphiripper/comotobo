@@ -27,7 +27,8 @@ uses
   EasyDelphiQ.Classes in '..\EasyDelphiQ.Classes.pas',
   Neas.PowermanApi.Notifications.DTOs.V1 in 'Neas.PowermanApi.Notifications.DTOs.V1.pas',
   AMQP.IMessageProperties in '..\..\AMQP\Source\AMQP.IMessageProperties.pas',
-  DJSON in '..\..\JSON\DJSON.pas';
+  DJSON in '..\..\JSON\DJSON.pas',
+  AMQP.Arguments in '..\..\AMQP\Source\AMQP.Arguments.pas';
 
 {$R *.res}
 

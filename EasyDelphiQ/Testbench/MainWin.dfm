@@ -48,14 +48,14 @@ object MainForm: TMainForm
   object Button3: TButton
     Left = 170
     Top = 8
-    Width = 75
+    Width = 115
     Height = 25
-    Caption = 'Subscribe'
+    Caption = 'Subscribe TestDTO'
     TabOrder = 3
     OnClick = Button3Click
   end
   object Button4: TButton
-    Left = 251
+    Left = 291
     Top = 8
     Width = 118
     Height = 25
@@ -66,9 +66,9 @@ object MainForm: TMainForm
   object Subscribe: TButton
     Left = 170
     Top = 33
-    Width = 75
+    Width = 115
     Height = 25
-    Caption = 'Subscribe'
+    Caption = 'Subscribe Timeseries'
     TabOrder = 5
     OnClick = SubscribeClick
   end

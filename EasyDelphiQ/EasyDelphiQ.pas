@@ -9,7 +9,7 @@ interface
 ///
 
 Uses
-  System.Classes, System.Generics.Collections, VCL.ExtCtrls, EasyDelphiQ.Interfaces, AMQP.Connection, AMQP.Interfaces,
+  System.Classes, System.Generics.Collections, VCL.ExtCtrls, EasyDelphiQ.Interfaces, AMQP.Connection, AMQP.Interfaces, AMQP.Arguments,
   EasyDelphiQ.DTO;
 
 Type
@@ -51,8 +51,8 @@ Type
     Property OnDisconnected : TNotifyEvent read FOnDisconnected write FOnDisconnected;
     Property OnDataReceived : TOnDataReceivedEvent read FOnDataReceived write FOnDataReceived;
 
-    Function MakeQueue(QueueName, ExchangeName, SubscriberID, Topic, DTOClassName: String): IQueue; Overload;
-    Function MakeQueue<T:Class,constructor>(SubscriberID: String = ''; Topic: String = ''): IQueue; Overload;
+    Function MakeQueue(QueueName, ExchangeName, SubscriberID, Topic, DTOClassName: String; Arguments: TArguments): IQueue; Overload;
+    Function MakeQueue<T:Class,constructor>(SubscriberID: String = ''; Topic: String = ''; Arguments: TArguments = []): IQueue; Overload;
     Function MakeExchange(Exchange: String; ExchangeType: TExchangeType): IExchange;
 
     Procedure Publish( Msg: TObject; Topic: String = '' );
@@ -62,19 +62,33 @@ Type
     /// <summary>
     ///   Messges are automatically acknowledged if no exception occurs in MessageHandler
     /// </summary>
-    Function Subscribe<T:Class,constructor>(SubscriberID: String; MessageHandler: TMessageHandler<T>): ISubscriptionResult; Overload;
+    Function Subscribe<T:Class,constructor>( SubscriberID: String;
+                                             MessageHandler: TMessageHandler<T>;
+                                             Arguments: TArguments = [] ): ISubscriptionResult; Overload;
     /// <summary>
     ///   Messges are automatically acknowledged if no exception occurs in MessageHandler
     /// </summary>
-    Function Subscribe<T:Class,constructor>(SubscriberID, Topic: String; MessageHandler: TMessageHandler<T>): ISubscriptionResult; Overload;
+    Function Subscribe<T:Class,constructor>( SubscriberID: String;
+                                             Topic: String;
+                                             MessageHandler: TMessageHandler<T>;
+                                             Arguments: TArguments = [] ): ISubscriptionResult; Overload;
     /// <summary>
     ///   Messges are automatically acknowledged if no exception occurs in MessageHandler
     /// </summary>
-    Function Subscribe<T:Class,constructor>(Queue, SubscriberID, Topic: String; MessageHandler: TMessageHandler<T>): ISubscriptionResult; Overload;
+    Function Subscribe<T:Class,constructor>( Queue: String;
+                                             SubscriberID: String;
+                                             Topic: String;
+                                             MessageHandler: TMessageHandler<T>;
+                                             Arguments: TArguments = [] ): ISubscriptionResult; Overload;
     /// <summary>
     ///   Messges are automatically acknowledged if no exception occurs in MessageHandler
     /// </summary>
-    Function Subscribe<T:Class,constructor>(Queue, Exchange, SubscriberID, Topic: String; MessageHandler: TMessageHandler<T>): ISubscriptionResult; Overload;
+    Function Subscribe<T:Class,constructor>( Queue: String;
+                                             Exchange: String;
+                                             SubscriberID: String;
+                                             Topic: String;
+                                             MessageHandler: TMessageHandler<T>;
+                                             Arguments: TArguments = [] ): ISubscriptionResult; Overload;
 
     Constructor Create;
     Destructor Destroy; override;
@@ -279,7 +293,7 @@ begin
   End;
 end;
 
-function TBus.MakeQueue(QueueName, ExchangeName, SubscriberID, Topic, DTOClassName: String): IQueue;
+function TBus.MakeQueue(QueueName, ExchangeName, SubscriberID, Topic, DTOClassName: String; Arguments: TArguments): IQueue;
 var
   Key: string;
 begin
@@ -289,13 +303,13 @@ begin
   If not FQueues.TryGetValue( Key, Result ) then
   Begin
     Result := TQueue.Create( FDefaultChannel, QueueName, Topic, SubscriberID, ExchangeName, DTOClassName );
-    FDefaultChannel.QueueDeclare( Result.Name );
+    FDefaultChannel.QueueDeclare( Result.Name, False, True, False, False, False, Arguments );
     FDefaultChannel.QueueBind( Result.Name, Result.Exchange, Result.Topic );
     FQueues.Add( Key, Result );
   End;
 end;
 
-function TBus.MakeQueue<T>(SubscriberID: String = ''; Topic: String = ''): IQueue;
+function TBus.MakeQueue<T>(SubscriberID: String = ''; Topic: String = ''; Arguments: TArguments = []): IQueue;
 var
   ClassInfo: TClassInformation;
 begin
@@ -304,7 +318,8 @@ begin
                        ClassInfo.GetExchangeName,
                        SubscriberID,
                        Topic,
-                       ClassInfo.GetClassName );
+                       ClassInfo.GetClassName,
+                       Arguments );
 end;
 
 procedure TBus.Publish(Msg: TObject; Topic: String = '');
@@ -356,13 +371,12 @@ begin
     Method();
 end;
 
-function TBus.Subscribe<T>(Queue, SubscriberID, Topic: String; MessageHandler: TMessageHandler<T>): ISubscriptionResult;
+function TBus.Subscribe<T>(Queue, SubscriberID, Topic: String; MessageHandler: TMessageHandler<T>; Arguments: TArguments): ISubscriptionResult;
 begin
-  Result := Subscribe<T>( Queue, '', SubscriberID, Topic, MessageHandler );
+  Result := Subscribe<T>( Queue, '', SubscriberID, Topic, MessageHandler, Arguments );
 end;
 
-function TBus.Subscribe<T>(Queue, Exchange, SubscriberID, Topic: String;
-  MessageHandler: TMessageHandler<T>): ISubscriptionResult;
+function TBus.Subscribe<T>(Queue, Exchange, SubscriberID, Topic: String; MessageHandler: TMessageHandler<T>; Arguments: TArguments): ISubscriptionResult;
 var
   QueueIntf: IQueue;
   QueueName: String;
@@ -374,7 +388,7 @@ begin
     Exchange := ClassInfo.GetExchangeName;
   if Queue = '' then
     Queue := ClassInfo.GetQueueName( SubscriberID );
-  QueueIntf := MakeQueue(Queue, Exchange, SubscriberID, Topic, ClassInfo.GetClassName );
+  QueueIntf := MakeQueue(Queue, Exchange, SubscriberID, Topic, ClassInfo.GetClassName, Arguments );
   Result := TSubscriptionResult.Create( FDefaultChannel, QueueIntf );
   Method := Procedure
             Begin
@@ -398,17 +412,17 @@ begin
   Method();
 end;
 
-function TBus.Subscribe<T>(SubscriberID: String; MessageHandler: TMessageHandler<T>): ISubscriptionResult;
+function TBus.Subscribe<T>(SubscriberID: String; MessageHandler: TMessageHandler<T>; Arguments: TArguments): ISubscriptionResult;
 begin
-  Result := Subscribe<T>( SubscriberID, '', MessageHandler );
+  Result := Subscribe<T>( SubscriberID, '', MessageHandler, Arguments );
 end;
 
-function TBus.Subscribe<T>(SubscriberID, Topic: String; MessageHandler: TMessageHandler<T>): ISubscriptionResult;
+function TBus.Subscribe<T>(SubscriberID, Topic: String; MessageHandler: TMessageHandler<T>; Arguments: TArguments): ISubscriptionResult;
 var
   ClassInfo: TClassInformation;
 begin
   ClassInfo := GetClassInformation<T>;
-  Result := Subscribe<T>( ClassInfo.GetQueueName(SubscriberID), ClassInfo.GetExchangeName, SubscriberID, Topic, MessageHandler );
+  Result := Subscribe<T>( ClassInfo.GetQueueName(SubscriberID), ClassInfo.GetExchangeName, SubscriberID, Topic, MessageHandler, Arguments );
 end;
 
 { RabbitHutch }
