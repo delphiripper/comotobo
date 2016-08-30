@@ -34,46 +34,46 @@ implementation
 
 constructor TestDTO.Create;
 begin
-  FID := 0;
+  FID   := 0;
   FName := '';
 end;  
 ```
 
-The "EasyDelphiQ.DTO" unit in the uses clause is not necessary, but it allows you to use the AssemblyName attribute which makes EasyDelphiQ compatible with EasyNetQ naming conventions.
+The `EasyDelphiQ.DTO` unit in the uses clause is not necessary, but it allows you to use the AssemblyName attribute which makes EasyDelphiQ compatible with EasyNetQ naming conventions.
 
 ### Publishing messages
 
 Simple example of how to publish a message:
 ```Delphi
-  Bus := RabbitHutch.CreateBus( 'host=localhost;username=TestUser;password=password' );
-  DTO := TestDTO.Create;
-  Try
-    DTO.ID   := 42;
-    DTO.Name := 'Zaphod';
-    Bus.Publish( DTO );
-  Finally
-    DTO.Free;
-	Bus.Free;
-  End;	
+Bus := RabbitHutch.CreateBus( 'host=localhost;username=TestUser;password=password' );
+DTO := TestDTO.Create;
+Try
+  DTO.ID   := 42;
+  DTO.Name := 'Zaphod';
+  Bus.Publish( DTO );
+Finally
+  DTO.Free;
+  Bus.Free;
+End;	
 ```
 
 The code above will connect to localhost and publish the DTO to an exchange named "Some.namespace.TestDTO:MyAssembly".
-The exchange naming convention is used by EassyNetQ; [Namespace].[Classname]:[Assemblyname]
+The exchange naming convention is used by EasyNetQ; [Namespace].[Classname]:[Assemblyname]
 
 ### Getting a single message from a queue
 
 ```Delphi
-  DTO := Bus.Get<TestDTO>( 'MySubscriberID' );
-  if DTO = nil then
-    Memo.Lines.Add( 'No messages in queue' )
-  else
-  Try
-    Memo.Lines.Add( 'Received:' );
-    Memo.Lines.Add( '  DTO.ID:   ' + DTO.ID.ToString );
-    Memo.Lines.Add( '  DTO.Name: ' + DTO.Name );
-  Finally
-    DTO.Free;
-  End;
+DTO := Bus.Get<TestDTO>( 'MySubscriberID' );
+if DTO = nil then
+  Memo.Lines.Add( 'No messages in queue' )
+else
+Try
+  Memo.Lines.Add( 'Received:' );
+  Memo.Lines.Add( '  DTO.ID:   ' + DTO.ID.ToString );
+  Memo.Lines.Add( '  DTO.Name: ' + DTO.Name );
+Finally
+  DTO.Free;
+End;
 ```
 
 
@@ -92,10 +92,10 @@ begin
 end;
 ```
 
-It is important to know, however, that the `Handler` method is **NOT** called in the main thread context, so the code here **MUST** be thread safe.
+If no exceptions are raised in the Handler method, then the message is acknowledged and removed from the queue.
 The `Msg` object in the example will be destroyed automatically by EasyDelphiQ. 
 If you want to keep the object (put it in a list, for example) then set `Msg` to `nil` in the `Handler`.
-If no exceptions are raised in the Handler method, then the message is acknowledged and removed from the queue.
+It is important to know, however, that the `Handler` method is **NOT** called in the main thread context, so the code here **MUST** be thread safe.
 
 Here is a simple example of how to use the DTO in the main thread context:
 

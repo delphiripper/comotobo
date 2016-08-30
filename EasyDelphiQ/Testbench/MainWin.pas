@@ -9,19 +9,19 @@ uses
 
 type
   TMainForm = class(TForm)
-    Button1: TButton;
+    ButtonPublish: TButton;
     Memo1: TMemo;
-    Button2: TButton;
-    Button3: TButton;
-    Button4: TButton;
-    Subscribe: TButton;
-    procedure Button1Click(Sender: TObject);
+    ButtonGet: TButton;
+    ButtonSubscribe: TButton;
+    ButtonCancelSubscription: TButton;
+    SubscribeTimeseries: TButton;
+    procedure ButtonPublishClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
-    procedure Button3Click(Sender: TObject);
-    procedure Button4Click(Sender: TObject);
-    procedure SubscribeClick(Sender: TObject);
+    procedure ButtonGetClick(Sender: TObject);
+    procedure ButtonSubscribeClick(Sender: TObject);
+    procedure ButtonCancelSubscriptionClick(Sender: TObject);
+    procedure SubscribeTimeseriesClick(Sender: TObject);
   private
     FBus: TBus;
     FBusPM: TBus;
@@ -57,7 +57,7 @@ begin
   Memo1.Lines.Add( 'Disconnected' );
 end;
 
-procedure TMainForm.Button1Click(Sender: TObject);
+procedure TMainForm.ButtonPublishClick(Sender: TObject);
 var
   DTO: TestDTO;
 begin
@@ -72,7 +72,7 @@ begin
   End;
 end;
 
-procedure TMainForm.Button2Click(Sender: TObject);
+procedure TMainForm.ButtonGetClick(Sender: TObject);
 var
   DTO: TestDTO;
 begin
@@ -89,12 +89,12 @@ begin
   End;
 end;
 
-procedure TMainForm.Button3Click(Sender: TObject);
+procedure TMainForm.ButtonSubscribeClick(Sender: TObject);
 begin
-  FSubscription := FBus.Subscribe<TestDTO>( 'Testbench', '', Handler, Arguments.SetMessageTTL( 30000 ) );
+  FSubscription := FBus.Subscribe<TestDTO>( 'Testbench', Handler, Arguments.SetMessageTTL( 30000 ) );
 end;
 
-procedure TMainForm.Button4Click(Sender: TObject);
+procedure TMainForm.ButtonCancelSubscriptionClick(Sender: TObject);
 begin
   FSubscription.Cancel;
   FSubscription := nil;
@@ -125,18 +125,18 @@ end;
 
 procedure TMainForm.Handler(var Msg: TestDTO);
 var
-  ID: Integer;
-  Name: String;
+  DTO: TestDTO;
 begin
-  ID   := Msg.ID;
-  Name := Msg.Name;
+  DTO := Msg; //Necessary to capture the object in the anonymous method below
   TThread.Queue( nil,
     Procedure
     begin
       Memo1.Lines.Add( 'Received:' );
-      Memo1.Lines.Add( '  DTO.ID:   ' + ID.ToString );
-      Memo1.Lines.Add( '  DTO.Name: ' + Name );
+      Memo1.Lines.Add( '  DTO.ID:   ' + DTO.ID.ToString );
+      Memo1.Lines.Add( '  DTO.Name: ' + DTO.Name );
+      DTO.Free; //Free the object here - we are done with it
     end );
+  Msg := nil; //Don't free the object here
 end;
 
 procedure TMainForm.HandlerPM(var Msg: ProductionGroupDataSerieCollectionV1);
@@ -146,7 +146,7 @@ begin
   PostMessage( Handle, WM_USER, 0, 0 )
 end;
 
-procedure TMainForm.SubscribeClick(Sender: TObject);
+procedure TMainForm.SubscribeTimeseriesClick(Sender: TObject);
 begin
   FSubscriptionPM := FBusPM.Subscribe<ProductionGroupDataSerieCollectionV1>( 'NexusDevTest', 'PowermanTest', '', HandlerPM,
                        Arguments.Add( 'x-message-ttl', 20000 ) );
