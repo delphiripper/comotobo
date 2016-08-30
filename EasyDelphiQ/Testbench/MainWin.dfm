@@ -18,14 +18,14 @@ object MainForm: TMainForm
     337)
   PixelsPerInch = 96
   TextHeight = 13
-  object Button1: TButton
+  object ButtonPublish: TButton
     Left = 8
     Top = 8
     Width = 75
     Height = 25
     Caption = 'Publish'
     TabOrder = 0
-    OnClick = Button1Click
+    OnClick = ButtonPublishClick
   end
   object Memo1: TMemo
     Left = 8
@@ -36,40 +36,40 @@ object MainForm: TMainForm
     ScrollBars = ssVertical
     TabOrder = 1
   end
-  object Button2: TButton
+  object ButtonGet: TButton
     Left = 89
     Top = 8
     Width = 75
     Height = 25
     Caption = 'Get'
     TabOrder = 2
-    OnClick = Button2Click
+    OnClick = ButtonGetClick
   end
-  object Button3: TButton
+  object ButtonSubscribe: TButton
     Left = 170
     Top = 8
     Width = 115
     Height = 25
     Caption = 'Subscribe TestDTO'
     TabOrder = 3
-    OnClick = Button3Click
+    OnClick = ButtonSubscribeClick
   end
-  object Button4: TButton
+  object ButtonCancelSubscription: TButton
     Left = 291
     Top = 8
     Width = 118
     Height = 25
     Caption = 'Cancel subscription'
     TabOrder = 4
-    OnClick = Button4Click
+    OnClick = ButtonCancelSubscriptionClick
   end
-  object Subscribe: TButton
+  object SubscribeTimeseries: TButton
     Left = 170
     Top = 33
     Width = 115
     Height = 25
     Caption = 'Subscribe Timeseries'
     TabOrder = 5
-    OnClick = SubscribeClick
+    OnClick = SubscribeTimeseriesClick
   end
 end
