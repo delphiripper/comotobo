@@ -57,8 +57,8 @@ Finally
 End;	
 ```
 
-The code above will connect to localhost and publish the DTO to an exchange named "Some.namespace.TestDTO:MyAssembly".
-The exchange naming convention is used by EasyNetQ; [Namespace].[Classname]:[Assemblyname]
+The code above will connect to localhost and publish the DTO to an exchange named `Some.namespace.TestDTO:MyAssembly`.
+This exchange naming convention is used by EasyNetQ; [Namespace].[Classname]:[Assemblyname].
 
 ### Getting a single message from a queue
 
@@ -81,7 +81,7 @@ End;
 
 To subscribe to a RabbitMQ queue, simply do this:
 ```Delphi
-  Subscription := Bus.Subscribe<TestDTO>( 'MySubscription', Handler );
+Subscription := Bus.Subscribe<TestDTO>( 'MySubscription', Handler );
 ```
 
 The handler method could look like this:
