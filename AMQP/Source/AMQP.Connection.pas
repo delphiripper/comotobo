@@ -83,7 +83,8 @@ Type
     //Read / write methods
     function ReadFrame: IAMQPFrame;
     function ReadMethod( AExpected: Array of TAMQPMethodID ): IAMQPFrame;
-    Procedure WriteFrame( AFrameType: Byte; AChannel: Word; APayload: TStream );
+    Procedure WriteFrame( AFrameType: Byte; AChannel: Word; APayload: TStream ); Overload;
+    Procedure WriteFrame( AFrameType: Byte; AChannel: Word; APayload: TStream; ASize: Integer ); Overload;
     procedure WriteHeartbeat;
     procedure WriteMethod( AChannel: Word; AMethod: TAMQPMethod );
     procedure WriteContent( AChannel, AClassID: Word; AContent: TStream; AProperties: IAMQPMessageProperties );
@@ -91,6 +92,8 @@ Type
     procedure DumpMethod( ASendRecv: TSendRecv; AMethod: TAMQPMethod );
     procedure DumpHeader( ASendRecv: TSendRecv; AHeader: TAMQPHeader );
     procedure DumpFrame(  ASendRecv: TSendRecv; AStream: TStream );
+  private
+    procedure SetMaxFrameSize(const Value: Cardinal);
   Public
     Property Username         : String      read FUsername      write FUsername;
     Property Password         : String      read FPassword      write FPassword;
@@ -102,7 +105,7 @@ Type
     Property ProductID        : String      read FProductID     write FProductID;
     Property PlatformID       : String      read FPlatformID    write FPlatformID;
     Property HeartbeatSecs    : Word        read FHeartbeatSecs write FHeartbeatSecs;
-    Property MaxFrameSize     : Cardinal    read FMaxFrameSize  write FMaxFrameSize;
+    Property MaxFrameSize     : Cardinal    read FMaxFrameSize  write SetMaxFrameSize;
     Property OnWireDebug      : TWireEvent  read FOnWireDebug   write FOnWireDebug;
     Property OnDebug          : TDebugEvent read FOnDebug       write FOnDebug;
     Property LastHeartbeat    : TDateTime   read FLastHeartbeat;
@@ -588,6 +591,14 @@ begin
   FTCP.Host := Value;
 end;
 
+procedure TAMQPConnection.SetMaxFrameSize(const Value: Cardinal);
+begin
+  if Value >= FRAME_MIN_SIZE then
+    FMaxFrameSize := Value
+  else
+    FMaxFrameSize := FRAME_MIN_SIZE;
+end;
+
 procedure TAMQPConnection.SetPort(const Value: Word);
 begin
   FTCP.Port := Value;
@@ -601,10 +612,12 @@ end;
 procedure TAMQPConnection.WriteContent(AChannel, AClassID: Word; AContent: TStream; AProperties: IAMQPMessageProperties );
 Const
   WEIGHT : Byte = $00;
+  FRAME_HEADER_SIZE = 8;
 Var
   Header: TMemoryStream;
+  Offset, PayloadSize: Integer;
 begin
-  //Header frame
+  //Content-Header frame
   Header := TMemoryStream.Create;
   Try
     Header.WriteUInt16( AClassID );
@@ -616,12 +629,21 @@ begin
     Header.Free;
   End;
 
-  //Content / body
-  WriteFrame( FRAME_TYPE_CONTENT, AChannel, AContent );
-  //TODO: Split into smaller packets according to settings from 'connection.tune'
+  //Content-Body frames
+  Offset := 0;
+  AContent.Position := 0;
+  while Offset < AContent.Size do
+  Begin
+    PayloadSize := MaxFrameSize - FRAME_HEADER_SIZE;
+    if PayloadSize > AContent.Size - AContent.Position then
+      PayloadSize := AContent.Size - AContent.Position;
+    AContent.Position := Offset;
+    WriteFrame( FRAME_TYPE_CONTENT, AChannel, AContent, PayloadSize );
+    Offset := Offset + PayloadSize;
+  End;
 end;
 
-procedure TAMQPConnection.WriteFrame(AFrameType: Byte; AChannel: Word; APayload: TStream);
+procedure TAMQPConnection.WriteFrame(AFrameType: Byte; AChannel: Word; APayload: TStream; ASize: Integer);
 Var
   Stream: TMemoryStream;
 begin
@@ -629,8 +651,8 @@ begin
   Try
     Stream.WriteOctet(  AFrameType );
     Stream.WriteUInt16( AChannel );
-    Stream.WriteUInt32( APayload.Size );
-    Stream.CopyFrom( APayload, -1 );
+    Stream.WriteUInt32( ASize );
+    Stream.CopyFrom( APayload, ASize );
     Stream.WriteOctet( FRAME_END );
     DumpFrame( srSend, Stream );
     FSendLock.Enter;
@@ -642,6 +664,31 @@ begin
   Finally
     Stream.Free;
   End;
+end;
+
+procedure TAMQPConnection.WriteFrame(AFrameType: Byte; AChannel: Word; APayload: TStream);
+//Var
+//  Stream: TMemoryStream;
+begin
+  APayload.Position := 0;
+  WriteFrame( AFrameType, AChannel, APayload, APayload.Size );
+//  Stream := TMemoryStream.Create;
+//  Try
+//    Stream.WriteOctet(  AFrameType );
+//    Stream.WriteUInt16( AChannel );
+//    Stream.WriteUInt32( APayload.Size );
+//    Stream.CopyFrom( APayload, -1 );
+//    Stream.WriteOctet( FRAME_END );
+//    DumpFrame( srSend, Stream );
+//    FSendLock.Enter;
+//    Try
+//      FTCP.IOHandler.Write( Stream, 0, False );
+//    Finally
+//      FSendLock.Leave;
+//    End;
+//  Finally
+//    Stream.Free;
+//  End;
 end;
 
 procedure TAMQPConnection.WriteHeartbeat;

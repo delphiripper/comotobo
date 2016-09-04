@@ -2,7 +2,7 @@ object TestbenchForm: TTestbenchForm
   Left = 0
   Top = 0
   Caption = 'AMQP Testbench'
-  ClientHeight = 788
+  ClientHeight = 821
   ClientWidth = 1218
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -15,12 +15,12 @@ object TestbenchForm: TTestbenchForm
   OnDestroy = FormDestroy
   DesignSize = (
     1218
-    788)
+    821)
   PixelsPerInch = 96
   TextHeight = 13
   object MemoMessages: TMemo
     Left = 8
-    Top = 596
+    Top = 629
     Width = 897
     Height = 184
     Anchors = [akLeft, akRight, akBottom]
@@ -45,7 +45,7 @@ object TestbenchForm: TTestbenchForm
   end
   object MemoSent: TMemo
     Left = 8
-    Top = 71
+    Top = 104
     Width = 401
     Height = 520
     Anchors = [akLeft, akTop, akBottom]
@@ -62,7 +62,7 @@ object TestbenchForm: TTestbenchForm
   end
   object MemoReceived: TMemo
     Left = 617
-    Top = 71
+    Top = 104
     Width = 401
     Height = 520
     Anchors = [akLeft, akTop, akRight, akBottom]
@@ -79,9 +79,9 @@ object TestbenchForm: TTestbenchForm
   end
   object MemoSentBytes: TMemo
     Left = 415
-    Top = 70
+    Top = 104
     Width = 196
-    Height = 520
+    Height = 519
     Anchors = [akLeft, akTop, akBottom]
     Color = clGreen
     Ctl3D = False
@@ -97,7 +97,7 @@ object TestbenchForm: TTestbenchForm
   end
   object MemoReceivedBytes: TMemo
     Left = 1024
-    Top = 71
+    Top = 104
     Width = 186
     Height = 520
     Anchors = [akTop, akRight, akBottom]
@@ -214,7 +214,7 @@ object TestbenchForm: TTestbenchForm
   end
   object ButtonGetRed: TButton
     Left = 696
-    Top = 8
+    Top = 9
     Width = 75
     Height = 25
     Caption = 'Get red'
@@ -250,7 +250,7 @@ object TestbenchForm: TTestbenchForm
   end
   object Panel1: TPanel
     Left = 911
-    Top = 597
+    Top = 630
     Width = 299
     Height = 183
     Anchors = [akRight, akBottom]
@@ -312,6 +312,51 @@ object TestbenchForm: TTestbenchForm
     Caption = 'Cancel Red'
     TabOrder = 26
     OnClick = ButtonCancelRedClick
+  end
+  object ButtonBigExchange: TButton
+    Left = 199
+    Top = 71
+    Width = 106
+    Height = 25
+    Caption = 'Declare Big Exchange'
+    TabOrder = 27
+    OnClick = ButtonBigExchangeClick
+  end
+  object Button1: TButton
+    Left = 322
+    Top = 70
+    Width = 87
+    Height = 25
+    Caption = 'Declare Big Queue'
+    TabOrder = 28
+    OnClick = Button1Click
+  end
+  object Button2: TButton
+    Left = 415
+    Top = 70
+    Width = 82
+    Height = 25
+    Caption = 'Bind big queue'
+    TabOrder = 29
+    OnClick = Button2Click
+  end
+  object Button3: TButton
+    Left = 600
+    Top = 70
+    Width = 75
+    Height = 25
+    Caption = 'Publish big'
+    TabOrder = 30
+    OnClick = Button3Click
+  end
+  object Button4: TButton
+    Left = 696
+    Top = 71
+    Width = 75
+    Height = 25
+    Caption = 'Get big'
+    TabOrder = 31
+    OnClick = Button4Click
   end
   object Timer1: TTimer
     Interval = 200

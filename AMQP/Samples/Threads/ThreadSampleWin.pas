@@ -202,7 +202,6 @@ end;
 procedure TProducerThread.Execute;
 var
   Channel : IAMQPChannel;
-  Msg     : TAMQPMessage;
   Work    : String;
   Counter : Integer;
 begin

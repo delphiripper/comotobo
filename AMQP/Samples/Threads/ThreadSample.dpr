@@ -19,7 +19,8 @@ uses
   AMQP.Protocol in '..\..\Source\AMQP.Protocol.pas',
   AMQP.StreamHelper in '..\..\Source\AMQP.StreamHelper.pas',
   AMQP.Types in '..\..\Source\AMQP.Types.pas',
-  AMQP.IMessageProperties in '..\..\Source\AMQP.IMessageProperties.pas';
+  AMQP.IMessageProperties in '..\..\Source\AMQP.IMessageProperties.pas',
+  AMQP.Arguments in '..\..\Source\AMQP.Arguments.pas';
 
 {$R *.res}
 

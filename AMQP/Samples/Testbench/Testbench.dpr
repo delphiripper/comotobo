@@ -19,7 +19,8 @@ uses
   AMQP.Channel in '..\..\Source\AMQP.Channel.pas',
   AMQP.Classes in '..\..\Source\AMQP.Classes.pas',
   AMQP.Interfaces in '..\..\Source\AMQP.Interfaces.pas',
-  AMQP.IMessageProperties in '..\..\Source\AMQP.IMessageProperties.pas';
+  AMQP.IMessageProperties in '..\..\Source\AMQP.IMessageProperties.pas',
+  AMQP.Arguments in '..\..\Source\AMQP.Arguments.pas';
 
 {$R *.res}
 

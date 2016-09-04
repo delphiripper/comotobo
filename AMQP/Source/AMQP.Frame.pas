@@ -11,6 +11,7 @@ const
   FRAME_TYPE_CONTENT   = 3;
   FRAME_TYPE_HEARTBEAT = 8;
   FRAME_END = $CE;
+  FRAME_MIN_SIZE: Word = 4096;
 
 Type
   TFrameKind = ( fkMethod    = FRAME_TYPE_METHOD,

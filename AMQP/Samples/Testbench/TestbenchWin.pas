@@ -47,6 +47,11 @@ type
     ButtonReject: TButton;
     ButtonThreadConsume: TButton;
     ButtonCancelRed: TButton;
+    ButtonBigExchange: TButton;
+    Button1: TButton;
+    Button2: TButton;
+    Button3: TButton;
+    Button4: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure ButtonConnectClick(Sender: TObject);
@@ -71,6 +76,11 @@ type
     procedure ButtonRejectClick(Sender: TObject);
     procedure ButtonThreadConsumeClick(Sender: TObject);
     procedure ButtonCancelRedClick(Sender: TObject);
+    procedure ButtonBigExchangeClick(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
   private
     AMQP: TAMQPConnection;
     Channel: IAMQPChannel;
@@ -266,6 +276,89 @@ begin
   Channel.BasicCancel( 'ConsumeRed' );
 end;
 
+procedure TTestbenchForm.Button1Click(Sender: TObject);
+begin
+  Channel.QueueDeclare( 'BigQueue' );
+end;
+
+procedure TTestbenchForm.Button2Click(Sender: TObject);
+begin
+  Channel.QueueBind( 'BigQueue', 'BigMessage', '' );
+end;
+
+procedure TTestbenchForm.Button3Click(Sender: TObject);
+var
+  Payload: TMemoryStream;
+  I: Integer;
+begin
+  if Channel = nil then
+    raise Exception.Create('Channel not open');
+  Payload := TMemoryStream.Create;
+  Try
+    for I := 1 to 2048 do
+    Begin
+      Payload.WriteOctet( 0 );
+      Payload.WriteOctet( 1 );
+      Payload.WriteOctet( 2 );
+      Payload.WriteOctet( 3 );
+      Payload.WriteOctet( 4 );
+      Payload.WriteOctet( 5 );
+      Payload.WriteOctet( 6 );
+      Payload.WriteOctet( 7 );
+    End;
+    Channel.BasicPublish( 'BigMessage', '', Payload );
+  Finally
+    Payload.Free;
+  End;
+end;
+
+procedure TTestbenchForm.Button4Click(Sender: TObject);
+
+  Procedure CheckEquals( A, B: Byte );
+  Begin
+    if A <> B then
+      raise Exception.Create('Message content error');
+  End;
+
+var
+  Msg: TAMQPMessage;
+  Buffer: TBytes;
+  I: Integer;
+begin
+  Msg := Channel.BasicGet( 'BigQueue' );
+  Try
+    if Msg <> nil then
+    Begin
+      MemoMessages.Lines.Add( 'Message size: ' + Msg.Body.Size.ToString );
+      Msg.Ack;
+
+      SetLength( Buffer, Msg.Body.Size );
+      Msg.Body.Read( Buffer, 0, Msg.Body.Size );
+      I := 0;
+      while I < Length(Buffer) do
+      Begin
+        CheckEquals( Buffer[i], 0 ); inc(I);
+        CheckEquals( Buffer[i], 1 ); inc(I);
+        CheckEquals( Buffer[i], 2 ); inc(I);
+        CheckEquals( Buffer[i], 3 ); inc(I);
+        CheckEquals( Buffer[i], 4 ); inc(I);
+        CheckEquals( Buffer[i], 5 ); inc(I);
+        CheckEquals( Buffer[i], 6 ); inc(I);
+        CheckEquals( Buffer[i], 7 ); inc(I);
+      End;
+    End
+    Else
+      MemoReceived.Lines.Add( 'No message' );
+  Finally
+    Msg.Free;
+  End;
+end;
+
+procedure TTestbenchForm.ButtonBigExchangeClick(Sender: TObject);
+begin
+  Channel.ExchangeDeclare( 'BigMessage', etTopic );
+end;
+
 procedure TTestbenchForm.ButtonCancelBlueClick(Sender: TObject);
 begin
   Channel.BasicCancel( 'ConsumeBlue' );
@@ -306,10 +399,8 @@ begin
   AMQP.Username      := 'TestUser';
   AMQP.Password      := 'password';
   AMQP.ApplicationID := 'Testbench';
+  AMQP.MaxFrameSize  := 4096;
   AMQP.Connect;
-  MemoMessages.Lines.Add( 'AMQP.ClassName: ' + AMQP.ClassName );
-  MemoMessages.Lines.Add( 'AMQP.UnitName:  ' + AMQP.UnitName );
-  MemoMessages.Lines.Add( 'AMQP.UnitScope: ' + AMQP.UnitScope );
 end;
 
 procedure TTestbenchForm.ButtonConsumeBlueClick(Sender: TObject);
