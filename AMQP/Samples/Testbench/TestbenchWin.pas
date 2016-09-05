@@ -105,7 +105,7 @@ var
 implementation
 
 Uses
-  AMQP.Message, AMQP.StreamHelper;
+  AMQP.Message, AMQP.StreamHelper, AMQP.Arguments;
 
 {$R *.dfm}
 
@@ -278,7 +278,7 @@ end;
 
 procedure TTestbenchForm.Button1Click(Sender: TObject);
 begin
-  Channel.QueueDeclare( 'BigQueue' );
+  Channel.QueueDeclare( 'BigQueue', False, True, False, False, False, MakeArguments.SetMessageTTL( 12000 ) );
 end;
 
 procedure TTestbenchForm.Button2Click(Sender: TObject);

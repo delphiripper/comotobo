@@ -646,10 +646,15 @@ procedure TAMQPConnection.WriteFrame(AFrameType: Byte; AChannel: Word; APayload:
 Var
   Stream: TMemoryStream;
 begin
-  if (ASize < 0) and (APayload <> nil) then
+  if (ASize < 0) then
   Begin
-    APayload.Position := 0;
-    ASize := APayload.Size;
+    if (APayload <> nil) then
+    Begin
+      APayload.Position := 0;
+      ASize := APayload.Size;
+    End
+    else
+      ASize := 0;
   End;
   Stream := TMemoryStream.Create;
   Try

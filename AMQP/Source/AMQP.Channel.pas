@@ -93,6 +93,7 @@ Uses
 
 procedure TAMQPChannel.ChannelClosed;
 begin
+  FQueue.Put( nil ); //Signal blocked threads... waiting for reply
   FConnection := nil;
   FConsumers.Clear;
 end;
@@ -598,7 +599,10 @@ begin
   CheckOpen;
   Repeat
     Result := FQueue.Get;
-  Until Result.Kind <> fkHeartbeat;
+  Until (Result = nil) or (Result.Kind <> fkHeartbeat);
+
+  if (Result = nil) then
+    raise AMQPException.Create('Disconnected from server');
 
   if not (Result.Payload is TAMQPMethod) then
     raise AMQPException.Create('Frame does not contain a method');

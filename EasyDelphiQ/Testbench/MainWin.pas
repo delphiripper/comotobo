@@ -91,7 +91,7 @@ end;
 
 procedure TMainForm.ButtonSubscribeClick(Sender: TObject);
 begin
-  FSubscription := FBus.Subscribe<TestDTO>( 'Testbench', Handler, Arguments.SetMessageTTL( 30000 ) );
+  FSubscription := FBus.Subscribe<TestDTO>( 'Testbench', Handler, MakeArguments.SetMessageTTL( 30000 ) );
 end;
 
 procedure TMainForm.ButtonCancelSubscriptionClick(Sender: TObject);
@@ -149,7 +149,7 @@ end;
 procedure TMainForm.SubscribeTimeseriesClick(Sender: TObject);
 begin
   FSubscriptionPM := FBusPM.Subscribe<ProductionGroupDataSerieCollectionV1>( 'NexusDevTest', 'PowermanTest', '', HandlerPM,
-                       Arguments.Add( 'x-message-ttl', 20000 ) );
+                       MakeArguments.Add( 'x-message-ttl', 20000 ) );
 end;
 
 procedure TMainForm.WMUSER(var Msg: TMessage);
