@@ -50,7 +50,7 @@ unit JSON2DTO;
 interface
 
 Uses
-  System.SysUtils, System.Classes, System.Generics.Collections, JSON;
+  System.SysUtils, System.Classes, System.Generics.Collections, DJSON;
 
 Type
   EDTOException = Class(Exception);

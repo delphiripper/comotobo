@@ -61,7 +61,7 @@ Type
   IAMQPConnection = interface ['{4736645E-A4E1-4E3B-B1D5-BC218A6C6CCC}']
     Function IsOpen: Boolean;
     Function DefaultMessageProperties: IAMQPMessageProperties;
-    Procedure WriteFrame( FrameType: Byte; Channel: Word; Payload: TStream );
+    //Procedure WriteFrame( FrameType: Byte; Channel: Word; Payload: TStream; Size: Integer );
     procedure WriteMethod( Channel: Word; Method: TAMQPMethod );
     procedure WriteContent( Channel, ClassID: Word; Content: TStream; MessageProperties: IAMQPMessageProperties );
     Procedure HeartbeatReceived;

@@ -83,8 +83,7 @@ Type
     //Read / write methods
     function ReadFrame: IAMQPFrame;
     function ReadMethod( AExpected: Array of TAMQPMethodID ): IAMQPFrame;
-    Procedure WriteFrame( AFrameType: Byte; AChannel: Word; APayload: TStream ); Overload;
-    Procedure WriteFrame( AFrameType: Byte; AChannel: Word; APayload: TStream; ASize: Integer ); Overload;
+    Procedure WriteFrame( AFrameType: Byte; AChannel: Word; APayload: TStream; ASize: Integer );
     procedure WriteHeartbeat;
     procedure WriteMethod( AChannel: Word; AMethod: TAMQPMethod );
     procedure WriteContent( AChannel, AClassID: Word; AContent: TStream; AProperties: IAMQPMessageProperties );
@@ -624,7 +623,7 @@ begin
     Header.WriteUInt16( WEIGHT );
     Header.WriteUInt64( AContent.Size );
     AProperties.SaveToStream( Header );
-    WriteFrame( FRAME_TYPE_HEADER, AChannel, Header );
+    WriteFrame( FRAME_TYPE_HEADER, AChannel, Header, -1 );
   Finally
     Header.Free;
   End;
@@ -647,12 +646,18 @@ procedure TAMQPConnection.WriteFrame(AFrameType: Byte; AChannel: Word; APayload:
 Var
   Stream: TMemoryStream;
 begin
+  if (ASize < 0) and (APayload <> nil) then
+  Begin
+    APayload.Position := 0;
+    ASize := APayload.Size;
+  End;
   Stream := TMemoryStream.Create;
   Try
     Stream.WriteOctet(  AFrameType );
     Stream.WriteUInt16( AChannel );
     Stream.WriteUInt32( ASize );
-    Stream.CopyFrom( APayload, ASize );
+    if ASize > 0 then
+      Stream.CopyFrom( APayload, ASize );
     Stream.WriteOctet( FRAME_END );
     DumpFrame( srSend, Stream );
     FSendLock.Enter;
@@ -666,41 +671,9 @@ begin
   End;
 end;
 
-procedure TAMQPConnection.WriteFrame(AFrameType: Byte; AChannel: Word; APayload: TStream);
-//Var
-//  Stream: TMemoryStream;
-begin
-  APayload.Position := 0;
-  WriteFrame( AFrameType, AChannel, APayload, APayload.Size );
-//  Stream := TMemoryStream.Create;
-//  Try
-//    Stream.WriteOctet(  AFrameType );
-//    Stream.WriteUInt16( AChannel );
-//    Stream.WriteUInt32( APayload.Size );
-//    Stream.CopyFrom( APayload, -1 );
-//    Stream.WriteOctet( FRAME_END );
-//    DumpFrame( srSend, Stream );
-//    FSendLock.Enter;
-//    Try
-//      FTCP.IOHandler.Write( Stream, 0, False );
-//    Finally
-//      FSendLock.Leave;
-//    End;
-//  Finally
-//    Stream.Free;
-//  End;
-end;
-
 procedure TAMQPConnection.WriteHeartbeat;
-var
-  Stream: TMemoryStream;
 begin
-  Stream := TMemoryStream.Create;
-  Try
-    WriteFrame( FRAME_TYPE_HEARTBEAT, 0, Stream );
-  Finally
-    Stream.Free;
-  End;
+  WriteFrame( FRAME_TYPE_HEARTBEAT, 0, nil, -1 );
 end;
 
 procedure TAMQPConnection.WriteMethod(AChannel: Word; AMethod: TAMQPMethod);
@@ -711,7 +684,7 @@ begin
   Try
     AMethod.SaveToStream( Payload );
     DumpMethod( srSend, AMethod );
-    WriteFrame( FRAME_TYPE_METHOD, AChannel, Payload );
+    WriteFrame( FRAME_TYPE_METHOD, AChannel, Payload, -1 );
   Finally
     Payload.Free;
   End;
