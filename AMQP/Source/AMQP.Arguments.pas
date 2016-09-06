@@ -18,7 +18,7 @@ Type
 
   TArgumentHelper = Record Helper for TArguments
     Function Add( Name: String; Value: Variant ): TArguments;
-    Function SetMessageTTL( TimeToLiveMS: Int32 ): TArguments;
+    Function SetMessageTTL( TimeToLiveMS: Int64 ): TArguments;
   End;
 
 Function MakeArguments: TArguments; overload;
@@ -47,7 +47,7 @@ begin
   Result := self + MakeArguments( Name, Value );
 end;
 
-function TArgumentHelper.SetMessageTTL(TimeToLiveMS: Int32): TArguments;
+function TArgumentHelper.SetMessageTTL(TimeToLiveMS: Int64): TArguments;
 begin
   Result := MakeArguments( 'x-message-ttl', TimeToLiveMS );
 end;

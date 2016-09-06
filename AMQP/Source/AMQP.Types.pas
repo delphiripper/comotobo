@@ -304,10 +304,10 @@ procedure TFieldTable.Assign(AArguments: TArguments);
       varInteger   : Result := TLongInt.Create(AValue);
       varLongWord,
       varInt64     : Result := TLongLongInt.Create(AValue);
-      varString    : If Length(AValue) <= 255 then
-                       Result := TShortString.Create(AValue)
-                     else
-                       Result := TLongString.Create(AValue);
+      varString    : //If Length(AValue) <= 255 then
+                     //  Result := TShortString.Create(AValue)  //unsupported by RabbitMQ
+                     //else
+                         Result := TLongString.Create(AValue);
     else
       raise EInvalidArgument.Create('Unsupported variant type in TArguments');
     end;
@@ -518,11 +518,13 @@ begin
     'u' : FValue := TShortUInt.Create(0);
     'I' : FValue := TLongInt.Create(0);
     'i' : FValue := TLongUInt.Create(0);
-    'L' : FValue := TLongLongInt.Create(0);
-    'l' : FValue := TLongLongUInt.Create(0);
+//    'L' : FValue := TLongLongInt.Create(0);   //AMQP 0-9-1 specification
+//    'l' : FValue := TLongLongUInt.Create(0);  //AMQP 0-9-1 specification
+    'l' : FValue := TLongLongInt.Create(0);     //RabbitMQ specification (see errata here: https://www.rabbitmq.com/amqp-0-9-1-errata.html)
     's' : FValue := TShortString.Create('');
     'S' : FValue := TLongString.Create('');
     'F' : FValue := TFieldTable.Create;
+    //TODO: Add support for these types!
     //'f' : FValue := TFloat.Create(0.0);
     //'d' : FValue := TDouble.Create(0.0);
     //'D' : FValue := TDecimalValue.Create(0.0);
@@ -803,8 +805,9 @@ begin
     vkShortUInt      : Result := 'u';
     vkLongInt        : Result := 'I';
     vkLongUInt       : Result := 'i';
-    vkLongLongInt    : Result := 'L';
-    vkLongLongUInt   : Result := 'l';
+//  vkLongLongInt    : Result := 'L';  //AMQP 0-9-1 specification
+//  vkLongLongUInt   : Result := 'l';  //AMQP 0-9-1 specification
+    vkLongLongInt    : Result := 'l';  //RabbitMQ specification (see errata here: https://www.rabbitmq.com/amqp-0-9-1-errata.html)
     vkShortString    : Result := 's';
     vkLongString     : Result := 'S';
     vkFieldTable     : Result := 'F';
