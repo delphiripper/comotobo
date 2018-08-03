@@ -393,11 +393,11 @@ end;
 
 procedure TTestbenchForm.ButtonConnectClick(Sender: TObject);
 begin
-  AMQP.Host          := 'localhost';
+  AMQP.Host          := '172.17.251.111';
   AMQP.Port          := 5672;
-  AMQP.VirtualHost   := '/';
-  AMQP.Username      := 'TestUser';
-  AMQP.Password      := 'password';
+  AMQP.VirtualHost   := 'vtc';
+  AMQP.Username      := 'vtc_test';
+  AMQP.Password      := 'vtc_test';
   AMQP.ApplicationID := 'Testbench';
   AMQP.MaxFrameSize  := 4096;
   AMQP.Connect;

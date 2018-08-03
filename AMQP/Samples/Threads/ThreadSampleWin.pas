@@ -67,7 +67,7 @@ var
 implementation
 
 Uses
-  AMQP.Message, AMQP.StreamHelper;
+  AMQP.Message, AMQP.StreamHelper, AMQP.Arguments;
 
 {$R *.dfm}
 
@@ -123,17 +123,21 @@ begin
   Consumer1 := nil;
   Consumer2 := nil;
   AMQP := TAMQPConnection.Create;
-  AMQP.HeartbeatSecs := 120;
-  AMQP.Host          := 'localhost';
+  AMQP.HeartbeatSecs := 60;
+  AMQP.Host          := '172.17.251.111';
   AMQP.Port          := 5672;
-  AMQP.VirtualHost   := '/';
-  AMQP.Username      := 'TestUser';
-  AMQP.Password      := 'password';
+  AMQP.VirtualHost   := 'vtc';
+  AMQP.Username      := 'vtc_test';
+  AMQP.Password      := 'vtc_test';
   AMQP.Connect;
   Channel := AMQP.OpenChannel;
   Channel.ExchangeDeclare( 'Work', 'direct' );
   Channel.QueueDeclare( 'WorkQueue' );
   Channel.QueueBind( 'WorkQueue', 'Work', 'work.unit' );
+  Channel.ExchangeDeclare('Exch1', 'direct');
+  Channel.ExchangeDeclare('Exch2', 'direct');
+  Channel.ExchangeBind('Exch2', 'Exch1', '', False, MakeArguments.Add('Arg1', '1').Add('Arg2', False).Add('Arg3', 100));
+
 end;
 
 { TConsumerThread }

@@ -21,6 +21,8 @@ Type
     Procedure WriteInt16( I: Int16 );
     Procedure WriteInt32( I: Int32 );
     Procedure WriteInt64( I: Int64 );
+    Procedure WriteFloat( F: Single);
+    procedure WriteDouble( D: Double);
     Procedure WriteShortStr( S: String );
     Procedure ReadMSB( var Buffer; Count: Integer );
     Procedure ReadOctet( var B: Byte );
@@ -34,6 +36,8 @@ Type
     Procedure ReadInt64( var I: Int64 );
     Procedure ReadShortStr( var S: String );
     Procedure ReadLongStr( var S: String );
+    Procedure ReadFloat( var F: Single);
+    Procedure ReadDouble( var D: Double);
     Function AsBytes: TIdBytes;
     Property AsString[ Encoding: TEncoding ]: String read GetAsString write SetAsString;
   End;
@@ -64,6 +68,16 @@ begin
   Finally
     StringStream.Free;
   End;
+end;
+
+procedure TStreamHelper.ReadDouble(var D: Double);
+begin
+ ReadMSB(D, SizeOf(D));
+end;
+
+procedure TStreamHelper.ReadFloat(var F: Single);
+begin
+ ReadMSB(F, SizeOf(F));
 end;
 
 procedure TStreamHelper.ReadInt16(var I: Int16);
@@ -153,6 +167,16 @@ begin
   Finally
     StringStream.Free;
   End;
+end;
+
+procedure TStreamHelper.WriteDouble(D: Double);
+begin
+ WriteMSB(D, SizeOf(D));
+end;
+
+procedure TStreamHelper.WriteFloat(F: Single);
+begin
+ WriteMSB(F, SizeOf(F));
 end;
 
 procedure TStreamHelper.WriteInt16(I: Int16);

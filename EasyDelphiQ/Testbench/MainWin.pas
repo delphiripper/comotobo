@@ -103,12 +103,12 @@ end;
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
   ReportMemoryLeaksOnShutdown := True;
-  FBus := RabbitHutch.CreateBus( 'host=localhost;username=TestUser;password=password' );
+  FBus := RabbitHutch.CreateBus( 'host=172.17.251.111;username=vtc_test;password=vtc_test;VirtualHost=vtc' );
   FBus.OnConnected := BusConnected;
   FBus.OnDisconnected := BusDisconnected;
   FSubscription := nil;
 
-  FBusPM := RabbitHutch.CreateBus( 'host=rabbitmq_test;username=rabbit;password=rabbit' );
+  FBusPM := RabbitHutch.CreateBus( 'host=172.17.251.111;username=vtc_test;password=vtc_test;VirtualHost=vtc' );
   FBusPM.OnConnected := BusConnected;
   FBusPM.OnDisconnected := BusDisconnected;
   FSubscriptionPM := nil;

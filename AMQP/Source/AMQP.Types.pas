@@ -186,6 +186,30 @@ Type
     Constructor Create( AValue: String ); Override;
   End;
 
+  TFloat = class(TAMQPValue)
+  Strict Protected
+    FValue: Single;
+    procedure SetValue(const Value: Single); Virtual;
+  Public
+    Property Value: Single read FValue write SetValue;
+    function AsString(AIndent: String): String; Override;
+    Procedure LoadFromStream( AStream: TStream ); Override;
+    Procedure SaveToStream( AStream: TStream ); Override;
+    Constructor Create( AValue: Single ); Virtual;
+  End;
+
+  TDouble = class(TAMQPValue)
+  Strict Protected
+    FValue: Double;
+    procedure SetValue(const Value: Double); Virtual;
+  Public
+    Property Value: Double read FValue write SetValue;
+    function AsString(AIndent: String): String; Override;
+    Procedure LoadFromStream( AStream: TStream ); Override;
+    Procedure SaveToStream( AStream: TStream ); Override;
+    Constructor Create( AValue: Double ); Virtual;
+  End;
+
   TFieldValuePair = Class
   strict private
     FName  : TShortString;
@@ -299,12 +323,12 @@ procedure TFieldTable.Assign(AArguments: TArguments);
       varBoolean   : Result := TBoolean.Create(AValue);
       varSmallInt,
       varByte,
-      varShortInt  : Result := TShortInt.Create(AValue);
+      varShortInt,//  : Result := TShortInt.Create(AValue);
       varWord,
-      varInteger   : Result := TLongInt.Create(AValue);
+      varInteger,//   : Result := TLongInt.Create(AValue);
       varLongWord,
-      varInt64     : Result := TLongLongInt.Create(AValue);
-      varString    : //If Length(AValue) <= 255 then
+      varInt64     : Result := TLongLongUInt.Create(AValue);
+      varString,varUString    : //If Length(AValue) <= 255 then
                      //  Result := TShortString.Create(AValue)  //unsupported by RabbitMQ
                      //else
                          Result := TLongString.Create(AValue);
@@ -525,8 +549,8 @@ begin
     'S' : FValue := TLongString.Create('');
     'F' : FValue := TFieldTable.Create;
     //TODO: Add support for these types!
-    //'f' : FValue := TFloat.Create(0.0);
-    //'d' : FValue := TDouble.Create(0.0);
+    'f' : FValue := TFloat.Create(0.0);
+    'd' : FValue := TDouble.Create(0.0);
     //'D' : FValue := TDecimalValue.Create(0.0);
     //'A' : FValue := TFieldArray.Create;
     //'T' : FValue := TTimestamp.Create;
@@ -805,9 +829,9 @@ begin
     vkShortUInt      : Result := 'u';
     vkLongInt        : Result := 'I';
     vkLongUInt       : Result := 'i';
-//  vkLongLongInt    : Result := 'L';  //AMQP 0-9-1 specification
-//  vkLongLongUInt   : Result := 'l';  //AMQP 0-9-1 specification
-    vkLongLongInt    : Result := 'l';  //RabbitMQ specification (see errata here: https://www.rabbitmq.com/amqp-0-9-1-errata.html)
+    vkLongLongInt    : Result := 'L';  //AMQP 0-9-1 specification
+    vkLongLongUInt   : Result := 'l';  //AMQP 0-9-1 specification
+//    vkLongLongInt    : Result := 'l';  //RabbitMQ specification (see errata here: https://www.rabbitmq.com/amqp-0-9-1-errata.html)
     vkShortString    : Result := 's';
     vkLongString     : Result := 'S';
     vkFieldTable     : Result := 'F';
@@ -819,6 +843,62 @@ begin
     vkEmpty          : Result := 'V';
     else raise AMQPTypeException.Create('Unsupported ValueKind');
   end;
+end;
+
+{ TFloat }
+
+function TFloat.AsString(AIndent: String): String;
+begin
+
+end;
+
+constructor TFloat.Create(AValue: Single);
+begin
+ FValue := AValue;
+ FValueKind := vkFloat;
+end;
+
+procedure TFloat.LoadFromStream(AStream: TStream);
+begin
+ AStream.ReadFloat(FValue);
+end;
+
+procedure TFloat.SaveToStream(AStream: TStream);
+begin
+ AStream.WriteFloat(FValue);
+end;
+
+procedure TFloat.SetValue(const Value: Single);
+begin
+ FValue := Value;
+end;
+
+{ TDouble }
+
+function TDouble.AsString(AIndent: String): String;
+begin
+
+end;
+
+constructor TDouble.Create(AValue: Double);
+begin
+ FValue := AValue;
+ FValueKind := vkDouble;
+end;
+
+procedure TDouble.LoadFromStream(AStream: TStream);
+begin
+ AStream.ReadDouble(FValue);
+end;
+
+procedure TDouble.SaveToStream(AStream: TStream);
+begin
+ AStream.WriteDouble(FValue);
+end;
+
+procedure TDouble.SetValue(const Value: Double);
+begin
+ FValue := Value;
 end;
 
 end.
