@@ -52,15 +52,18 @@ Type
     Function GetState     : TAMQPChannelState;
     Function GetConsumers : TObjectList<TConsumer>;
 
-    Procedure ExchangeDeclare( AExchangeName, AType: String; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False ); overload;
-    Procedure ExchangeDeclare( AExchangeName: String; AType: TExchangeType; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False ); overload;
+    Procedure ExchangeDeclare( AExchangeName, AType: String; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False; Arguments: TArguments = [] ); overload;
+    Procedure ExchangeDeclare( AExchangeName: String; AType: TExchangeType; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False; Arguments: TArguments = [] ); overload;
     Procedure ExchangeDelete( AExchangeName: String; AIfUnused: Boolean = True; ANoWait: Boolean = False );
+    Procedure ExchangeBind(ADestination, ASource, ARoutingKey: String; ANoWait: Boolean = False; Arguments: TArguments = []);
+    Procedure ExchangeUnBind(ADestination, ASource, ARoutingKey: String; ANoWait: Boolean = False; Arguments: TArguments = []);
+
     Procedure QueueDeclare( AQueueName: String; APassive: Boolean = False; ADurable: Boolean = True; AExclusive: Boolean = False;
                             AAutoDelete: Boolean = False; ANoWait: Boolean = False; Arguments: TArguments = [] );
-    Procedure QueueBind( AQueueName, AExchangeName, ARoutingKey: String; ANoWait: Boolean = False );
+    Procedure QueueBind( AQueueName, AExchangeName, ARoutingKey: String; ANoWait: Boolean = False; Arguments: TArguments = [] );
     Procedure QueuePurge( AQueueName: String; ANoWait: Boolean = False );
     Procedure QueueDelete( AQueueName: String; AIfUnused: Boolean = True; AIfEmpty: Boolean = True; ANoWait: Boolean = False );
-    Procedure QueueUnBind( AQueueName, AExchangeName, ARoutingKey: String );
+    Procedure QueueUnBind( AQueueName, AExchangeName, ARoutingKey: String; Arguments: TArguments = [] );
 
     Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream ); Overload;
     Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean ); Overload;
@@ -184,7 +187,7 @@ begin
   inherited;
 end;
 
-procedure TAMQPChannel.ExchangeDeclare(AExchangeName, AType: String; APassive, ADurable, ANoWait: Boolean);
+procedure TAMQPChannel.ExchangeDeclare(AExchangeName, AType: String; APassive, ADurable, ANoWait: Boolean; Arguments: TArguments);
 var
   Method: TAMQPMethod;
 begin
@@ -195,6 +198,7 @@ begin
     Method.Field['passive' ].AsBoolean.Value     := APassive;
     Method.Field['durable' ].AsBoolean.Value     := ADurable;
     Method.Field['no-wait' ].AsBoolean.Value     := ANoWait;
+    Method.Field['arguments'].AsFieldTable.Assign(Arguments);
     WriteMethod( Method );
 
     if not ANoWait then
@@ -204,9 +208,29 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.ExchangeDeclare(AExchangeName: String; AType: TExchangeType; APassive, ADurable, ANoWait: Boolean);
+procedure TAMQPChannel.ExchangeBind(ADestination, ASource, ARoutingKey: String; ANoWait: Boolean;
+  Arguments: TArguments);
+var
+  Method: TAMQPMethod;
 begin
-  ExchangeDeclare( AExchangeName, ExchangeTypeStr[AType], APassive, ADurable, ANoWait );
+  Method := TAMQPMethod.CreateMethod( AMQP_EXCHANGE_BIND );
+  Try
+    Method.Field['destination' ].AsShortString.Value  := ADestination;
+    Method.Field['source'      ].AsShortString.Value  := ASource;
+    Method.Field['routing-key' ].AsShortString.Value  := ARoutingKey;
+    Method.Field['no-wait'     ].AsBoolean.Value      := ANoWait;
+    Method.Field['arguments'   ].AsFieldTable.Assign(Arguments);
+    WriteMethod( Method );
+    if not ANoWait then
+      ReadMethod( AMQP_EXCHANGE_BIND_OK );
+  Finally
+    Method.Free;
+  End;
+end;
+
+procedure TAMQPChannel.ExchangeDeclare(AExchangeName: String; AType: TExchangeType; APassive, ADurable, ANoWait: Boolean; Arguments: TArguments);
+begin
+  ExchangeDeclare( AExchangeName, ExchangeTypeStr[AType], APassive, ADurable, ANoWait, Arguments );
 end;
 
 procedure TAMQPChannel.ExchangeDelete(AExchangeName: String; AIfUnused, ANoWait: Boolean);
@@ -222,6 +246,26 @@ begin
 
     if not ANoWait then
       ReadMethod( AMQP_EXCHANGE_DELETE_OK );
+  Finally
+    Method.Free;
+  End;
+end;
+
+procedure TAMQPChannel.ExchangeUnBind(ADestination, ASource, ARoutingKey: String; ANoWait: Boolean;
+  Arguments: TArguments);
+var
+  Method: TAMQPMethod;
+begin
+  Method := TAMQPMethod.CreateMethod( AMQP_EXCHANGE_UNBIND );
+  Try
+    Method.Field['destination' ].AsShortString.Value  := ADestination;
+    Method.Field['source'      ].AsShortString.Value  := ASource;
+    Method.Field['routing-key' ].AsShortString.Value  := ARoutingKey;
+    Method.Field['no-wait'     ].AsBoolean.Value      := ANoWait;
+    Method.Field['arguments'   ].AsFieldTable.Assign(Arguments);
+    WriteMethod( Method );
+    if not ANoWait then
+      ReadMethod( AMQP_EXCHANGE_UNBIND_OK );
   Finally
     Method.Free;
   End;
@@ -498,7 +542,7 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.QueueBind(AQueueName, AExchangeName, ARoutingKey: String; ANoWait: Boolean);
+procedure TAMQPChannel.QueueBind(AQueueName, AExchangeName, ARoutingKey: String; ANoWait: Boolean; Arguments: TArguments);
 var
   Method: TAMQPMethod;
 begin
@@ -508,6 +552,7 @@ begin
     Method.Field['exchange'].AsShortString.Value    := AExchangeName;
     Method.Field['routing-key'].AsShortString.Value := ARoutingKey;
     Method.Field['no-wait' ].AsBoolean.Value        := ANoWait;
+    Method.Field['arguments'].AsFieldTable.Assign(Arguments);
     WriteMethod( Method );
 
     if not ANoWait then
@@ -575,7 +620,7 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.QueueUnBind(AQueueName, AExchangeName, ARoutingKey: String);
+procedure TAMQPChannel.QueueUnBind(AQueueName, AExchangeName, ARoutingKey: String; Arguments: TArguments);
 var
   Method: TAMQPMethod;
 begin
@@ -584,6 +629,7 @@ begin
     Method.Field['queue'].AsShortString.Value       := AQueueName;
     Method.Field['exchange'].AsShortString.Value    := AExchangeName;
     Method.Field['routing-key'].AsShortString.Value := ARoutingKey;
+    Method.Field['arguments'].AsFieldTable.Assign(Arguments);
     WriteMethod( Method );
     ReadMethod( AMQP_QUEUE_UNBIND_OK );
   Finally

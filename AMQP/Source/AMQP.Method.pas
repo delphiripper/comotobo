@@ -243,6 +243,30 @@ begin
         21: Begin
               Name := 'exchange.delete-ok';
             End;
+        30: begin
+              Name := 'exchange.bind';
+              Add( 'reserved-1',  TShortUInt.Create( 0 ) );
+              Add( 'destination', TShortString.Create( '' ) );
+              Add( 'source',      TShortString.Create( '' ) );
+              Add( 'routing-key', TShortString.Create( '' ));
+              Add( 'no-wait',     TBoolean.Create( False ) );
+              Add( 'arguments',   TFieldTable.Create);
+            End;
+        31: Begin
+              Name := 'exchange.bind-ok';
+            End;
+        40: begin
+              Name := 'exchange.unbind';
+              Add( 'reserved-1',  TShortUInt.Create( 0 ) );
+              Add( 'destination', TShortString.Create( '' ) );
+              Add( 'source',      TShortString.Create( '' ) );
+              Add( 'routing-key', TShortString.Create( '' ));
+              Add( 'no-wait',     TBoolean.Create( False ) );
+              Add( 'arguments',   TFieldTable.Create);
+            End;
+        41: Begin
+              Name := 'exchange.unbind-ok';
+            End;
         Else
           raise AMQPException.CreateFmt('Unsupported method: ClassID %d, MethodID %d', [ClassID, MethodID]);
       end;
