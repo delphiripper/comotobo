@@ -52,6 +52,11 @@ type
     Button2: TButton;
     Button3: TButton;
     Button4: TButton;
+    btn1: TButton;
+    btn2: TButton;
+    btn3: TButton;
+    btn4: TButton;
+    btn5: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure ButtonConnectClick(Sender: TObject);
@@ -81,6 +86,11 @@ type
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
+    procedure btn1Click(Sender: TObject);
+    procedure btn2Click(Sender: TObject);
+    procedure btn3Click(Sender: TObject);
+    procedure btn4Click(Sender: TObject);
+    procedure btn5Click(Sender: TObject);
   private
     AMQP: TAMQPConnection;
     Channel: IAMQPChannel;
@@ -139,6 +149,34 @@ begin
   Finally
     DebugLock.Release;
   End;
+end;
+
+procedure TTestbenchForm.btn1Click(Sender: TObject);
+begin
+  Channel.ExchangeDeclare( 'Exchange1', etTopic);
+end;
+
+procedure TTestbenchForm.btn2Click(Sender: TObject);
+begin
+  Channel.ExchangeDeclare( 'Exchange2', etTopic );
+end;
+
+procedure TTestbenchForm.btn3Click(Sender: TObject);
+begin
+ Channel.ExchangeBind('Exchange2', 'Exchange1', 'color.#');
+ Channel.ExchangeBind('Colors', 'Exchange2', 'color.red');
+end;
+
+procedure TTestbenchForm.btn4Click(Sender: TObject);
+begin
+ Channel.ExchangeUnBind('Colors', 'Exchange2', 'color.red');
+end;
+
+procedure TTestbenchForm.btn5Click(Sender: TObject);
+begin
+  if Channel = nil then
+    raise Exception.Create('Channel not open');
+  Channel.BasicPublish( 'Exchange1', 'color.red', 'Magenta is the word!' );
 end;
 
 procedure TTestbenchForm.ButtonGetBlueClick(Sender: TObject);

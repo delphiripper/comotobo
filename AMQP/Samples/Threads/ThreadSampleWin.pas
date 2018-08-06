@@ -134,9 +134,6 @@ begin
   Channel.ExchangeDeclare( 'Work', 'direct' );
   Channel.QueueDeclare( 'WorkQueue' );
   Channel.QueueBind( 'WorkQueue', 'Work', 'work.unit' );
-  Channel.ExchangeDeclare('Exch1', 'direct');
-  Channel.ExchangeDeclare('Exch2', 'direct');
-  Channel.ExchangeBind('Exch2', 'Exch1', '', False, MakeArguments.Add('Arg1', '1').Add('Arg2', False).Add('Arg3', 100));
 
 end;
 

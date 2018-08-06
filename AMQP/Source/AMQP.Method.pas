@@ -264,7 +264,7 @@ begin
               Add( 'no-wait',     TBoolean.Create( False ) );
               Add( 'arguments',   TFieldTable.Create);
             End;
-        41: Begin
+        51: Begin
               Name := 'exchange.unbind-ok';
             End;
         Else

@@ -28,6 +28,8 @@ Type
     Procedure ExchangeDeclare( AExchangeName, AType: String; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False ; Arguments: TArguments = [] ); overload;
     Procedure ExchangeDeclare( AExchangeName: String; AType: TExchangeType; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False ; Arguments: TArguments = [] ); overload;
     Procedure ExchangeBind(ADestination, ASource, ARoutingKey: String; ANoWait: Boolean = False; Arguments: TArguments = []);
+    Procedure ExchangeUnBind(ADestination, ASource, ARoutingKey: String; ANoWait: Boolean = False; Arguments: TArguments = []);
+
     Procedure ExchangeDelete( AExchangeName: String; AIfUnused: Boolean = True; ANoWait: Boolean = False );
     Procedure QueueDeclare( AQueueName: String; APassive: Boolean = False; ADurable: Boolean = True; AExclusive: Boolean = False;
                             AAutoDelete: Boolean = False; ANoWait: Boolean = False; Arguments: TArguments = [] );
