@@ -180,6 +180,8 @@ begin
   Prop := TAMQPMessageProperties.Create('TestBench');
   Prop.ApplicationHeaders.Add('Field1', TShortShortInt.Create(100));
   Prop.ApplicationHeaders.Add('Field2', TDouble.Create(1021.12));
+  Prop.ApplicationHeaders.Add('Field3', TLongString.Create('Test'));
+  Prop.ApplicationHeaders.Add('Field4', TAMQPArray.Create.Add('1').Add(2).Add(1921.281));
   Prop.Priority.Value := 220;
   Channel.BasicPublish( 'Exchange1', 'color.red', 'Magenta is the word!', False, Prop);
 end;

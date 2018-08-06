@@ -29,6 +29,7 @@ Type
     FConnection: TAMQPConnection;
     FWasConnected: Boolean;
     FDefaultChannel: IAMQPChannel;
+    FErrorChannel: IAMQPChannel;
     FSerializer: TSerializer;
     FDeSerializer: TDeSerializer;
     FQueues: TDictionary<String,IQueue>;
@@ -122,7 +123,8 @@ Type
 implementation
 
 Uses
-  System.SysUtils, System.TypInfo, EasyDelphiQ.Classes, DJSON, AMQP.Message, AMQP.IMessageProperties;
+  System.SysUtils, System.TypInfo, EasyDelphiQ.Classes, DJSON, AMQP.Message, AMQP.IMessageProperties,
+   AMQP.MessageProperties, AMQP.Types;
 
 { TBus }
 
@@ -141,6 +143,7 @@ begin
       FWasConnected := True;
       FConnectTimer.Enabled := True;
       FDefaultChannel := FConnection.OpenChannel;
+      FErrorChannel := FConnection.OpenChannel;
       If (FQueues.Count > 0) or (FExchanges.Count > 0) then
         Reconnect;
       DoConnected;
@@ -221,6 +224,7 @@ begin
   FQueues.Free;
   FExchanges.Free;
   FDefaultChannel := nil;
+  FErrorChannel := nil;
   FConnection.Free;
   FSubscriptions.Free;
   FConnectTimer.Free;
@@ -289,6 +293,7 @@ begin
   Begin
     Result := TExchange.Create( FDefaultChannel, Exchange, ExchangeType );
     FDefaultChannel.ExchangeDeclare( Result.Name, Result.ExchangeType );
+    FErrorChannel.ExchangeDeclare( Result.Name+'_error', etFanout);
     FExchanges.Add( Exchange, Result );
   End;
 end;
@@ -302,9 +307,12 @@ begin
   Key    := QueueName + '_' + Topic + '_' + SubscriberID + '_' + ExchangeName;
   If not FQueues.TryGetValue( Key, Result ) then
   Begin
-    Result := TQueue.Create( FDefaultChannel, QueueName, Topic, SubscriberID, ExchangeName, DTOClassName );
+    Result := TQueue.Create( FDefaultChannel, QueueName, Topic, SubscriberID, ExchangeName, DTOClassName, Arguments );
     FDefaultChannel.QueueDeclare( Result.Name, False, True, False, False, False, Arguments );
     FDefaultChannel.QueueBind( Result.Name, Result.Exchange, Result.Topic );
+    FErrorChannel.QueueDeclare( Result.Name+'_error', False, True, False, False, False, nil );
+    FErrorChannel.QueueBind( Result.Name+'_error', Result.Exchange+'_error', Result.Topic );
+
     FQueues.Add( Key, Result );
   End;
 end;
@@ -361,12 +369,16 @@ begin
   Begin
     ExchangePair.Value.Reconnect( FDefaultChannel );
     FDefaultChannel.ExchangeDeclare( ExchangePair.Value.Name, ExchangePair.Value.ExchangeType );
+    FErrorChannel.ExchangeDeclare( ExchangePair.Value.Name+'_error', etFanout);
   End;
   for QueuePair in FQueues do
   Begin
     QueuePair.Value.Reconnect( FDefaultChannel );
-    FDefaultChannel.QueueDeclare( QueuePair.Value.Name );
+    FDefaultChannel.QueueDeclare( QueuePair.Value.Name, False, True, False, False, False, QueuePair.Value.Arguments );
     FDefaultChannel.QueueBind( QueuePair.Value.Name, QueuePair.Value.Exchange, QueuePair.Value.Topic );
+    FErrorChannel.QueueDeclare( QueuePair.Value.Name+'_error');
+    FErrorChannel.QueueBind( QueuePair.Value.Name+'_error', QueuePair.Value.Exchange+'_error', QueuePair.Value.Topic);
+
   End;
   for Method in FSubscriptions do
     Method();
@@ -396,12 +408,26 @@ begin
               GetDefaultChannel.BasicConsume(  Procedure( AMQPMessage: TAMQPMessage; var SendAck: Boolean )
                                                var
                                                  Msg: T;
+                                                 Prop: IAMQPMessageProperties;
                                                Begin
                                                  Msg := T.Create;
                                                  Try
+                                                  try
                                                    FDeSerializer( AMQPMessage.Body, Msg );
                                                    MessageHandler( Msg );
-                                                   SendAck := True;
+                                                  except
+                                                   on E: Exception do
+                                                    begin
+                                                      Prop := AMQPMessage.Header.PropertyList;
+                                                      Prop.ApplicationHeaders.Add('Exception',
+                                                        TFieldTable.Create
+                                                          .Add('Class', E.ClassName)
+                                                          .Add('Message', E.Message));
+                                                      FErrorChannel.BasicPublish(AMQPMessage.Exchange+'_error',
+                                                        AMQPMessage.RoutingKey, AMQPMessage.Body, False, Prop);
+                                                    end;
+                                                  end;
+                                                  SendAck := True;
                                                  finally
                                                    Msg.Free;
                                                  end;
