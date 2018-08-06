@@ -849,7 +849,7 @@ end;
 
 function TFloat.AsString(AIndent: String): String;
 begin
-
+  Result := FloatToStr(FValue);
 end;
 
 constructor TFloat.Create(AValue: Single);
@@ -877,7 +877,7 @@ end;
 
 function TDouble.AsString(AIndent: String): String;
 begin
-
+ Result := FloatToStr(FValue);
 end;
 
 constructor TDouble.Create(AValue: Double);

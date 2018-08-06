@@ -154,7 +154,7 @@ begin
   WriteLine( 'Thread starting' );
   NameThreadForDebugging( 'ConsumerThread' );
   Queue    := TAMQPMessageQueue.Create;
-  FChannel := FAMQP.OpenChannel;
+  FChannel := FAMQP.OpenChannel(0, 10);
   Try
     FChannel.BasicConsume( Queue, 'WorkQueue', 'consumer' );
     Repeat
@@ -166,6 +166,7 @@ begin
         WriteLine( 'Consumed: ' + Msg.Body.AsString[ TEncoding.ASCII ] );
         Msg.Ack;
         Msg.Free;
+        //Sleep(Random(50));
       End;
     Until Terminated;
   Finally

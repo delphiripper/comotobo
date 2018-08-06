@@ -115,7 +115,7 @@ var
 implementation
 
 Uses
-  AMQP.Message, AMQP.StreamHelper, AMQP.Arguments;
+  AMQP.Message, AMQP.StreamHelper, AMQP.Arguments, AMQP.IMessageProperties, AMQP.MessageProperties, AMQP.Types;
 
 {$R *.dfm}
 
@@ -173,10 +173,15 @@ begin
 end;
 
 procedure TTestbenchForm.btn5Click(Sender: TObject);
+var Prop: IAMQPMessageProperties;
 begin
   if Channel = nil then
     raise Exception.Create('Channel not open');
-  Channel.BasicPublish( 'Exchange1', 'color.red', 'Magenta is the word!' );
+  Prop := TAMQPMessageProperties.Create('TestBench');
+  Prop.ApplicationHeaders.Add('Field1', TShortShortInt.Create(100));
+  Prop.ApplicationHeaders.Add('Field2', TDouble.Create(1021.12));
+  Prop.Priority.Value := 220;
+  Channel.BasicPublish( 'Exchange1', 'color.red', 'Magenta is the word!', False, Prop);
 end;
 
 procedure TTestbenchForm.ButtonGetBlueClick(Sender: TObject);

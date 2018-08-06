@@ -338,6 +338,7 @@ begin
   Try
     FSerializer( Msg, Stream );
     MessageProperties.&Type.Value := ClassInfo.GetFullyQualifiedClassName;
+    MessageProperties.ContentType.Value := 'application/json';
     FDefaultChannel.BasicPublish( Exchange.Name, Topic, Stream, False, MessageProperties );
   Finally
     Stream.Free;

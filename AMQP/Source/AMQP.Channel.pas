@@ -65,10 +65,12 @@ Type
     Procedure QueueDelete( AQueueName: String; AIfUnused: Boolean = True; AIfEmpty: Boolean = True; ANoWait: Boolean = False );
     Procedure QueueUnBind( AQueueName, AExchangeName, ARoutingKey: String; Arguments: TArguments = [] );
 
+    Procedure BasicQOS(APrefetchSize: Cardinal; APrefetchCount: Word; AGlobal: Boolean = False);
+
     Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream ); Overload;
     Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean ); Overload;
     Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean; AMessageProperties: IAMQPMessageProperties ); Overload;
-    Procedure BasicPublish( AExchange, ARoutingKey: String; Const AData: String; AMandatory: Boolean = False ); Overload;
+    Procedure BasicPublish( AExchange, ARoutingKey: String; Const AData: String; AMandatory: Boolean = False; AMessageProperties: IAMQPMessageProperties = nil ); Overload;
     Function  BasicGet( AQueueName: String; ANoAck: Boolean = False ): TAMQPMessage;
     Procedure BasicAck( AMessage: TAMQPMessage; AMultiple: Boolean = False ); Overload;
     Procedure BasicAck( ADeliveryTag: UInt64; AMultiple: Boolean = False ); Overload;
@@ -444,18 +446,38 @@ begin
   BasicPublish( AExchange, ARoutingKey, AData, False );
 end;
 
-procedure TAMQPChannel.BasicPublish(AExchange, ARoutingKey: String; const AData: String; AMandatory: Boolean = False);
+procedure TAMQPChannel.BasicPublish(AExchange, ARoutingKey: String; const AData: String; AMandatory: Boolean = False; AMessageProperties: IAMQPMessageProperties = nil );
 var
   StringStream: TStringStream;
   MessageProperties: IAMQPMessageProperties;
 begin
-  MessageProperties := FConnection.DefaultMessageProperties;
+  if AMessageProperties = nil then
+  begin
+    MessageProperties := FConnection.DefaultMessageProperties;
+    MessageProperties.&Type.Value := 'String';
+  end else
+   MessageProperties := AMessageProperties;
   StringStream := TStringStream.Create( AData, TEncoding.UTF8 );
   Try
-    MessageProperties.&Type.Value := 'String';
     BasicPublish( AExchange, ARoutingKey, StringStream, AMandatory, MessageProperties );
   Finally
     StringStream.Free;
+  End;
+end;
+
+procedure TAMQPChannel.BasicQOS(APrefetchSize: Cardinal; APrefetchCount: Word; AGlobal: Boolean);
+var
+  Method: TAMQPMethod;
+begin
+  Method := TAMQPMethod.CreateMethod( AMQP_BASIC_QOS );
+  Try
+    Method.Field['prefetch-size'].AsLongUInt.Value    := APrefetchSize;
+    Method.Field['prefetch-count'].AsShortUInt.Value := APrefetchCount;
+    Method.Field['global'].AsBoolean.Value       := AGlobal;
+    WriteMethod(  Method );
+    ReadMethod( [ AMQP_BASIC_QOS_OK ] );
+  Finally
+    Method.Free;
   End;
 end;
 

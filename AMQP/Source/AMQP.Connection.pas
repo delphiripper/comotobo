@@ -115,7 +115,7 @@ Type
     Procedure Connect;
     Procedure Disconnect;
 
-    Function OpenChannel: IAMQPChannel;
+    Function OpenChannel(APrefetchSize: Cardinal = 0; APrefetchCount: Word = 0): IAMQPChannel;
     Procedure CloseChannel( AChannel: IAMQPChannel );
 
     Constructor Create;
@@ -524,7 +524,7 @@ Begin
   End;
 End;
 
-function TAMQPConnection.OpenChannel: IAMQPChannel;
+function TAMQPConnection.OpenChannel(APrefetchSize: Cardinal = 0; APrefetchCount: Word = 0): IAMQPChannel;
 var
   Frame: IAMQPFrame;
   Method: TAMQPMethod;
@@ -536,6 +536,8 @@ begin
     Frame := Result.Queue.Get;
     if (Frame.Payload.Name <> 'channel.open-ok') then
       ProtocolError( 'Expected channel.open-ok' );
+    if (APrefetchSize > 0) or (APrefetchCount > 0) then
+      Result.BasicQOS(APrefetchSize, APrefetchCount, False);
   Finally
     Method.Free;
   End;

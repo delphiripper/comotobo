@@ -225,8 +225,8 @@ begin
               Add( 'type',       TShortString.Create( '' ) );
               Add( 'passive',    TBoolean.Create( False ) );
               Add( 'durable',    TBoolean.Create( False ) );
-              Add( 'reserved-2', TBoolean.Create( False ) );
-              Add( 'reserved-3', TBoolean.Create( False ) );
+              Add( 'autodelete', TBoolean.Create( False ) );
+              Add( 'internal', TBoolean.Create( False ) );
               Add( 'no-wait',    TBoolean.Create( False ) );
               Add( 'arguments',  TFieldTable.Create );
             end;
@@ -235,7 +235,7 @@ begin
             End;
         20: Begin
               Name := 'exchange.delete';
-              Add( 'reserved-1', TShortUInt.Create( 0 ) );
+              Add( 'ticket', TShortUInt.Create( 0 ) );
               Add( 'exchange',   TShortString.Create( '' ) );
               Add( 'if-unused',  TBoolean.Create( False ) );
               Add( 'no-wait',    TBoolean.Create( False ) );
@@ -245,7 +245,7 @@ begin
             End;
         30: begin
               Name := 'exchange.bind';
-              Add( 'reserved-1',  TShortUInt.Create( 0 ) );
+              Add( 'ticket',  TShortUInt.Create( 0 ) );
               Add( 'destination', TShortString.Create( '' ) );
               Add( 'source',      TShortString.Create( '' ) );
               Add( 'routing-key', TShortString.Create( '' ));
@@ -274,7 +274,7 @@ begin
       case AMethodID of
         10: Begin
               Name := 'queue.declare';
-              Add( 'reserved-1',  TShortUInt.Create( 0 ) );
+              Add( 'ticket',  TShortUInt.Create( 0 ) );
               Add( 'queue',       TShortString.Create( '' ) );
               Add( 'passive',     TBoolean.Create( False ) );
               Add( 'durable',     TBoolean.Create( False ) );
@@ -291,7 +291,7 @@ begin
             End;
         20: Begin
               Name := 'queue.bind';
-              Add( 'reserved-1',  TShortUInt.Create( 0 ) );
+              Add( 'ticket',  TShortUInt.Create( 0 ) );
               Add( 'queue',       TShortString.Create( '' ) );
               Add( 'exchange',    TShortString.Create( '' ) );
               Add( 'routing-key', TShortString.Create( '' ) );
@@ -303,7 +303,7 @@ begin
             End;
         30: Begin
               Name := 'queue.purge';
-              Add( 'reserved-1',  TShortUInt.Create( 0 ) );
+              Add( 'ticket',  TShortUInt.Create( 0 ) );
               Add( 'queue',       TShortString.Create( '' ) );
               Add( 'no-wait',     TBoolean.Create( False ) );
             end;
@@ -312,7 +312,7 @@ begin
             End;
         40: Begin
               Name := 'queue.delete';
-              Add( 'reserved-1',  TShortUInt.Create( 0 ) );
+              Add( 'ticket',  TShortUInt.Create( 0 ) );
               Add( 'queue',       TShortString.Create( '' ) );
               Add( 'if-unused',   TBoolean.Create( False ) );
               Add( 'if-empty',    TBoolean.Create( False ) );
@@ -324,7 +324,7 @@ begin
             End;
         50: Begin
               Name := 'queue.unbind';
-              Add( 'reserved-1',  TShortUInt.Create( 0 ) );
+              Add( 'ticket',  TShortUInt.Create( 0 ) );
               Add( 'queue',       TShortString.Create( '' ) );
               Add( 'exchange',    TShortString.Create( '' ) );
               Add( 'routing-key', TShortString.Create( '' ) );
@@ -338,9 +338,18 @@ begin
       end;
     AMQP_CLASS_BASIC:
       case AMethodID of
+        10: Begin
+              Name := 'basic.qos';
+              Add('prefetch-size', TLongUInt.Create(0));
+              Add('prefetch-count', TShortUInt.Create(0));
+              Add('global', TBoolean.Create(False));
+            End;
+        11: begin
+              Name := 'basic.qos-ok';
+            end;
         20: Begin
               Name := 'basic.consume';
-              Add( 'reserved-1',   TShortUInt.Create( 0 ) );
+              Add( 'ticket',   TShortUInt.Create( 0 ) );
               Add( 'queue',        TShortString.Create( '' ) );
               Add( 'consumer-tag', TShortString.Create( '' ) );
               Add( 'no-local',     TBoolean.Create( False ) );
