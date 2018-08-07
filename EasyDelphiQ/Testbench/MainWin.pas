@@ -128,7 +128,6 @@ var
   DTO: TestDTO;
 begin
   DTO := Msg; //Necessary to capture the object in the anonymous method below
-  raise Exception.Create('Error Message');
   TThread.Queue( nil,
     Procedure
     begin

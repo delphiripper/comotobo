@@ -181,7 +181,7 @@ begin
   Prop.ApplicationHeaders.Add('Field1', TShortShortInt.Create(100));
   Prop.ApplicationHeaders.Add('Field2', TDouble.Create(1021.12));
   Prop.ApplicationHeaders.Add('Field3', TLongString.Create('Test'));
-  Prop.ApplicationHeaders.Add('Field4', TAMQPArray.Create.Add('1').Add(2).Add(1921.281));
+  Prop.ApplicationHeaders.Add('Field4', TFieldArray.Create.Add('1').Add(2).Add(1921.281));
   Prop.Priority.Value := 220;
   Channel.BasicPublish( 'Exchange1', 'color.red', 'Magenta is the word!', False, Prop);
 end;
@@ -475,6 +475,7 @@ begin
   DebugLock   := TCriticalSection.Create;
   AMQP := TAMQPConnection.Create;
   AMQP.HeartbeatSecs := 120;
+  AMQP.Timeout := 5000;
   AMQP.OnWireDebug   := AMQPWireEvent;
   AMQP.OnDebug       := AMQPDebugEvent;
   Channel := nil;
@@ -532,7 +533,7 @@ begin
   WriteLine( 'Thread starting', False );
   NameThreadForDebugging( 'ConsumerThread' );
   Repeat
-    Msg := FQueue.Get;
+    Msg := FQueue.Get(INFINITE);
     if Msg = nil then
       Terminate;
     if not Terminated then

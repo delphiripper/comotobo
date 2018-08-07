@@ -420,11 +420,11 @@ begin
       Result := nil
     else //if GetOkFrame.Payload.AsMethod.IsMethod( AMQP_BASIC_GET_OK ) then
     Begin
-      HeaderFrame := FQueue.Get;
+      HeaderFrame := FQueue.Get(FConnection.Timeout);
       if HeaderFrame.Kind <> fkHeader then
         raise AMQPException.Create('Expected header frame');
       Repeat
-        BodyFrame := FQueue.Get;
+        BodyFrame := FQueue.Get(FConnection.Timeout);
         Stream.CopyFrom( BodyFrame.Payload.AsBody.Stream, -1 );
       Until Stream.Size >= HeaderFrame.Payload.AsHeader.BodySize;
       Result := TAMQPMessage.Create;
@@ -666,7 +666,7 @@ var
 begin
   CheckOpen;
   Repeat
-    Result := FQueue.Get;
+    Result := FQueue.Get(FConnection.Timeout);
   Until (Result = nil) or (Result.Kind <> fkHeartbeat);
 
   if (Result = nil) then

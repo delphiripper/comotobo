@@ -8,6 +8,7 @@ Uses
 
 Type
   AMQPException = Class(Exception);
+  AMQPTimeout  = class(AMQPException);
 
   TAMQPServerProperties = Class
   Strict Private
@@ -58,7 +59,7 @@ Type
     FQueue     : TQueue<T>;
   Public
     Function Count: Integer; Virtual;
-    Function Get: T; Virtual;
+    Function Get(ATimeOut: LongWord): T; Virtual;
     Procedure Put( Item: T ); Virtual;
 
     Constructor Create; Virtual;
@@ -169,15 +170,16 @@ begin
   inherited;
 end;
 
-function TBlockingQueue<T>.Get: T;
+function TBlockingQueue<T>.Get(ATimeOut: LongWord): T;
 begin
   FGuard.Acquire;
   try
     while FQueue.Count = 0 do
     begin
-      FCondition.WaitFor(FGuard);
+      if FCondition.WaitFor(FGuard, ATimeOut) = wrTimeout then
+       raise AMQPTimeout.Create('Timeout!');
     end;
-    Result := FQueue.Dequeue;
+    Result := FQueue.Dequeue
   finally
     FGuard.Release;
   end;

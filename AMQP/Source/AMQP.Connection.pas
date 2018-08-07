@@ -62,11 +62,13 @@ Type
     FIsOpen           : Boolean;
     FServerDisconnected: Boolean;
     FHeartbeatTimer   : TTimer;
+    FTimeout          : LongWord;
     // get / set methods
     function GetHost: String;
     function GetPort: Word;
     procedure SetHost(const Value: String);
     procedure SetPort(const Value: Word);
+    function GetTimeOut: LongWord;
     //Heartbeat handling
     procedure HeartbeatTimer( Sender: TObject );
     Procedure HeartbeatReceived;
@@ -93,6 +95,7 @@ Type
     procedure DumpFrame(  ASendRecv: TSendRecv; AStream: TStream );
   private
     procedure SetMaxFrameSize(const Value: Cardinal);
+    procedure SetTimeout(const Value: LongWord);
   Public
     Property Username         : String      read FUsername      write FUsername;
     Property Password         : String      read FPassword      write FPassword;
@@ -109,6 +112,7 @@ Type
     Property OnDebug          : TDebugEvent read FOnDebug       write FOnDebug;
     Property LastHeartbeat    : TDateTime   read FLastHeartbeat;
     Property ServerProperties : TAMQPServerProperties read FServerProperties;
+    property Timeout          : LongWord    read GetTimeout write SetTimeout;
     Function DefaultMessageProperties: IAMQPMessageProperties;
     Function IsOpen: Boolean;
 
@@ -176,7 +180,7 @@ begin
     Method := TAMQPMethod.CreateMethod( AMQP_CHANNEL_CLOSE );
     Try
       WriteMethod( AChannel.ID, Method );
-      Frame := AChannel.Queue.Get;
+      Frame := AChannel.Queue.Get(FTimeout);
       Try
         Frame.Payload.AsMethod.CheckMethod( AMQP_CHANNEL_CLOSE_OK );
       Except
@@ -261,6 +265,7 @@ begin
   FTCP.Host         := 'localhost';
   FTCP.Port         := 5672;
   FTCP.UseNagle     := False;
+  FTimeout          := INFINITE;
   FUsername         := '';
   FPassword         := '';
   FVirtualHost      := '/';
@@ -456,6 +461,11 @@ begin
   Result := FTCP.Port;
 end;
 
+function TAMQPConnection.GetTimeOut: LongWord;
+begin
+ Result := FTimeout;
+end;
+
 procedure TAMQPConnection.HeartbeatReceived;
 begin
   FLastHeartbeat := Now;
@@ -533,7 +543,7 @@ begin
   Method := TAMQPMethod.CreateMethod( AMQP_CHANNEL_OPEN );
   Try
     WriteMethod( Result.ID, Method );
-    Frame := Result.Queue.Get;
+    Frame := Result.Queue.Get(FTimeout);
     if (Frame.Payload.Name <> 'channel.open-ok') then
       ProtocolError( 'Expected channel.open-ok' );
     if (APrefetchSize > 0) or (APrefetchCount > 0) then
@@ -553,7 +563,7 @@ function TAMQPConnection.ReadFrame: IAMQPFrame;
 begin
   Result := nil;
   if ThreadRunning or (FMainQueue.Count > 0) then
-    Result := FMainQueue.Get;
+    Result := FMainQueue.Get(FTimeout);
 end;
 
 function TAMQPConnection.ReadMethod(AExpected: array of TAMQPMethodID): IAMQPFrame;
@@ -603,6 +613,11 @@ end;
 procedure TAMQPConnection.SetPort(const Value: Word);
 begin
   FTCP.Port := Value;
+end;
+
+procedure TAMQPConnection.SetTimeout(const Value: LongWord);
+begin
+ FTimeout := Value;
 end;
 
 function TAMQPConnection.ThreadRunning: Boolean;

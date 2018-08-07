@@ -64,6 +64,7 @@ Type
   end;
 
   IAMQPConnection = interface ['{4736645E-A4E1-4E3B-B1D5-BC218A6C6CCC}']
+    function GetTimeOut: LongWord;
     Function IsOpen: Boolean;
     Function DefaultMessageProperties: IAMQPMessageProperties;
     //Procedure WriteFrame( FrameType: Byte; Channel: Word; Payload: TStream; Size: Integer );
@@ -73,6 +74,7 @@ Type
     Procedure InternalDisconnect( CloseConnection: Boolean );
     Procedure ServerDisconnect( Msg: String );
     Procedure CloseChannel( Channel: IAMQPChannel );
+    property Timeout: LongWord read GetTimeOut;
   end;
 
 implementation
