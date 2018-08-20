@@ -1,15 +1,21 @@
 unit AMQP.Interfaces;
-
+{$IfDef FPC}
+        {$Mode delphi}
+        {$SmartLink On}
+{$EndIf}
 interface
 
 Uses
-  System.SysUtils, System.Classes, AMQP.Classes, AMQP.Method, AMQP.Message, AMQP.Frame, AMQP.IMessageProperties, AMQP.Arguments;
+  SysUtils, Classes, AMQP.Classes, AMQP.Method, AMQP.Message, AMQP.Frame, AMQP.IMessageProperties, AMQP.Arguments;
 
 Type
   TAMQPChannelState = ( cOpen, cClosed );
 
+{$IfDef FPC}
+  TConsumerMethod = Procedure( AMQPMessage: TAMQPMessage; var SendAck: Boolean ) of object;
+{$Else}
   TConsumerMethod = Reference to Procedure( AMQPMessage: TAMQPMessage; var SendAck: Boolean );
-
+{$EndIf}
   TExchangeType = ( etDirect, etTopic, etFanout, etHeaders );
 
 Const
@@ -25,18 +31,18 @@ Type
     Property Queue : TAMQPQueue        read GetQueue;
     Property State : TAMQPChannelState read GetState;
 
-    Procedure ExchangeDeclare( AExchangeName, AType: String; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False ; Arguments: TArguments = [] ); overload;
-    Procedure ExchangeDeclare( AExchangeName: String; AType: TExchangeType; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False ; Arguments: TArguments = [] ); overload;
-    Procedure ExchangeBind(ADestination, ASource, ARoutingKey: String; ANoWait: Boolean = False; Arguments: TArguments = []);
-    Procedure ExchangeUnBind(ADestination, ASource, ARoutingKey: String; ANoWait: Boolean = False; Arguments: TArguments = []);
+    Procedure ExchangeDeclare( AExchangeName, AType: String; Arguments: TArguments; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False); overload;
+    Procedure ExchangeDeclare( AExchangeName: String; AType: TExchangeType; Arguments: TArguments; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False); overload;
+    Procedure ExchangeBind(ADestination, ASource, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean = False);
+    Procedure ExchangeUnBind(ADestination, ASource, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean = False);
 
     Procedure ExchangeDelete( AExchangeName: String; AIfUnused: Boolean = True; ANoWait: Boolean = False );
-    Procedure QueueDeclare( AQueueName: String; APassive: Boolean = False; ADurable: Boolean = True; AExclusive: Boolean = False;
-                            AAutoDelete: Boolean = False; ANoWait: Boolean = False; Arguments: TArguments = [] );
-    Procedure QueueBind( AQueueName, AExchangeName, ARoutingKey: String; ANoWait: Boolean = False ; Arguments: TArguments = [] );
+    Procedure QueueDeclare( AQueueName: String; Arguments: TArguments; APassive: Boolean = False; ADurable: Boolean = True; AExclusive: Boolean = False;
+                            AAutoDelete: Boolean = False; ANoWait: Boolean = False);
+    Procedure QueueBind( AQueueName, AExchangeName, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean = False);
     Procedure QueuePurge( AQueueName: String; ANoWait: Boolean = False );
     Procedure QueueDelete( AQueueName: String; AIfUnused: Boolean = True; AIfEmpty: Boolean = True; ANoWait: Boolean = False );
-    Procedure QueueUnBind( AQueueName, AExchangeName, ARoutingKey: String; Arguments: TArguments = [] );
+    Procedure QueueUnBind( AQueueName, AExchangeName, ARoutingKey: String; Arguments: TArguments);
 
     Procedure BasicQOS(APrefetchSize: Cardinal; APrefetchCount: Word; AGlobal: Boolean = False);
 

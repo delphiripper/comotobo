@@ -1,5 +1,8 @@
 unit AMQP.Arguments;
-
+{$IFDEF FPC}
+        {$MODE DELPHI}
+        {$SmartLink On}
+{$ENDIF}
 interface
 
 Const
@@ -21,17 +24,23 @@ Type
     Function SetMessageTTL( TimeToLiveMS: Int64 ): TArguments;
   End;
 
+function MakeArgument( Name: String; Value: Variant): TArgument;
 Function MakeArguments: TArguments; overload;
 Function MakeArguments( Name: String; Value: Variant ): TArguments; overload;
 
 implementation
 
+function MakeArgument( Name: String; Value: Variant): TArgument;
+begin
+ Result.Value:= Value;
+ Result.Name:= Name;
+end;
+
 Function MakeArguments( Name: String; Value: Variant ): TArguments;
 var
   Arg: TArgument;
 Begin
-  Arg.Name  := Name;
-  Arg.Value := Value;
+  Arg := MakeArgument(Name, Value);
   Result := [ Arg ];
 End;
 

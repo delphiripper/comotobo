@@ -1,9 +1,18 @@
 unit AMQP.Connection;
-
+{$IfDef FPC}
+        {$Mode delphi}
+        {$Define NO_HEARTBEAT}
+        {$SmartLink On}
+{$EndIf}
 interface
 
 Uses
-  System.SysUtils, System.Classes, System.Generics.Collections, System.Generics.Defaults, System.SyncObjs, IdTcpClient, VCL.ExtCtrls,
+  {$IfDef FPC}
+  SysUtils, Classes, Generics.Collections, Generics.Defaults, SyncObjs,
+  {$Else}
+  System.SysUtils, System.Classes, System.Generics.Collections, System.Generics.Defaults, System.SyncObjs, VCL.ExtCtrls,
+  {$EndIf}
+  IdTcpClient,
   AMQP.Classes, AMQP.Frame, AMQP.Header, AMQP.Method, AMQP.Protocol, AMQP.Message, AMQP.Interfaces, AMQP.IMessageProperties;
 
 Type
@@ -11,10 +20,15 @@ Type
 
   TWireEvent  = Procedure( Sender: TObject; SendRecv: TSendRecv; Strings: TStrings ) of object;
   TDebugEvent = Procedure( Sender: TObject; SendRecv: TSendRecv; Strings: TStrings ) of object;
+{$IfDef FPC}
+  TDumpMethod = procedure( ASendRecv: TSendRecv; AMethod: TAMQPMethod ) of object;
+  TDumpHeader = procedure( ASendRecv: TSendRecv; AHeader: TAMQPHeader ) of object;
+  TDumpFrame  = procedure( ASendRecv: TSendRecv; AStream: TStream ) of object;
+{$Else}
   TDumpMethod = Reference to procedure( ASendRecv: TSendRecv; AMethod: TAMQPMethod );
   TDumpHeader = Reference to procedure( ASendRecv: TSendRecv; AHeader: TAMQPHeader );
   TDumpFrame  = Reference to procedure( ASendRecv: TSendRecv; AStream: TStream );
-
+{$EndIf}
   TAMQPThread = Class( TThread )
   Strict Private
     FConnection  : IAMQPConnection;
@@ -61,7 +75,9 @@ Type
     FOnDebug          : TDebugEvent;
     FIsOpen           : Boolean;
     FServerDisconnected: Boolean;
+    {$IfNDef NO_HEARTBEAT}
     FHeartbeatTimer   : TTimer;
+    {$EndIf}
     FTimeout          : LongWord;
     // get / set methods
     function GetHost: String;
@@ -131,7 +147,13 @@ function GetLocalComputerName : string;
 implementation
 
 Uses
-  IdGlobal, IdStack, Forms, Windows,
+  IdGlobal, IdStack,
+{$IfNDef FPC}
+  Forms,
+{$EndIf}
+{$IfDef WINDOWS}
+  Windows,
+{$EndIf}
   AMQP.MessageProperties, AMQP.Payload, AMQP.Helper, AMQP.StreamHelper, AMQP.Types, AMQP.Channel;
 
 function GetLocalComputerName : string;
@@ -140,10 +162,12 @@ var
   CharArray : array [0..MAX_PATH] of char;
 begin
   StrLength := MAX_PATH;
+{$IfDef WINDOWS}
   if GetComputerName(CharArray, StrLength) and (StrLength > 0) then
     result := CharArray
   else
     result := '';
+{$EndIf}
 end;
 
 { TAMQPConnection }
@@ -255,8 +279,10 @@ begin
   FServerProperties.ReadConnectionOpenOK( Frame.Payload.AsMethod );
   FIsOpen := True;
   FServerDisconnected := False;
+  {$IfNDef NO_HEARTBEAT}
   FHeartbeatTimer.Interval := FHeartbeatSecs * 1000;
   FHeartbeatTimer.Enabled  := True;
+  {$EndIf}
 end;
 
 constructor TAMQPConnection.Create;
@@ -270,8 +296,8 @@ begin
   FPassword         := '';
   FVirtualHost      := '/';
   FClientAPI        := 'DelphiAMQP';
-  FApplicationID    := ExtractFileName(Application.ExeName);
-  FProductID        := Application.Title;
+  FApplicationID    := ExtractFileName(ParamStr(0));
+  FProductID        := 'ProductId';
   FPlatformID       := GetLocalComputerName;
   FChannels         := TThreadList<IAMQPChannel>.Create;
   FLastHeartbeat    := 0;
@@ -279,17 +305,19 @@ begin
   FOnDebug          := nil;
   FServerProperties := TAMQPServerProperties.Create;
   FMainQueue        := TAMQPQueue.Create;
-  FSendLock         := TCriticalSection.Create;
-  FDebugLock        := TCriticalSection.Create;
+  FSendLock         := {$IFNDEF FPC}System.{$ENDIF}SyncObjs.TCriticalSection.Create;
+  FDebugLock        := {$IFNDEF FPC}System.{$ENDIF}SyncObjs.TCriticalSection.Create;
   FThread           := nil;
   FIsOpen           := False;
   FHeartbeatSecs    := 180;
   FMaxFrameSize     := 131072;
   FServerDisconnected := False;
+  {$IfNDef NO_HEARTBEAT}
   FHeartbeatTimer   := TTimer.Create( nil );
   FHeartbeatTimer.Enabled  := False;
   FHeartbeatTimer.Interval := 60000;
   FHeartbeatTimer.OnTimer  := HeartbeatTimer;
+  {$EndIf}
 end;
 
 function TAMQPConnection.DefaultMessageProperties: IAMQPMessageProperties;
@@ -310,7 +338,9 @@ begin
     FTCP.Free;
     FSendLock.Free;
     FDebugLock.Free;
+    {$IfNDef NO_HEARTBEAT}
     FHeartbeatTimer.Free;
+    {$EndIf}
     inherited;
   End;
 end;
@@ -476,12 +506,16 @@ begin
   if IsOpen then
     WriteHeartbeat
   else
-    FHeartbeatTimer.Enabled := False;
+    {$IfNDef NO_HEARTBEAT}
+     FHeartbeatTimer.Enabled := False;
+    {$EndIf}
 end;
 
 procedure TAMQPConnection.InternalDisconnect(ACloseConnection: Boolean);
 begin
+  {$IfNDef NO_HEARTBEAT}
   FHeartbeatTimer.Enabled := False;
+  {$EndIf}
   Try
     CloseAllChannels;
     if ACloseConnection then
@@ -748,7 +782,7 @@ begin
   FDumpMethod  := ADumpMethod;
   FDumpHeader  := ADumpHeader;
   FDumpFrame   := ADumpFrame;
-  inherited Create;
+  inherited Create(False);
 end;
 
 procedure TAMQPThread.Disconnect(E: Exception);
@@ -816,11 +850,18 @@ begin
     Frame.SetKind( TFrameKind( Bytes[0] ) );
     Frame.SetChannel( Bytes[1] shl  8 + Bytes[2] );
     Frame.SetSize( Bytes[3] shl 24 + Bytes[4] shl 16 + Bytes[5] shl 8 + Bytes[6] );
+    {$IfDef FPC}
+    Stream.Write(Bytes[0], Length(Bytes));
+    {$Else}
     Stream.Write( @Bytes[0], Length( Bytes ) );
-
+    {$EndIf}
     FTCP.IOHandler.ReadBytes( Payload, Frame.Size + 1, False );
     Frame.SetFrameEnd( Payload[ Frame.Size ] );
+    {$IfDef FPC}
+    Stream.Write( Payload[0], Length( Payload )-1 );
+    {$Else}
     Stream.Write( @Payload[0], Length( Payload )-1 );
+    {$EndIf}
 
     FDumpFrame( srReceive, Stream );
 

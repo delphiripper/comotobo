@@ -1,10 +1,18 @@
 unit AMQP.Classes;
+{$IFDEF FPC}
+        {$MODE DELPHI}
+        {$SmartLink On}
+{$ENDIF}
 
 interface
 
 Uses
-  System.SysUtils, System.Classes, System.SyncObjs, System.Generics.Collections,
-  AMQP.Frame, AMQP.Message, AMQP.Method, AMQP.Types;
+  SysUtils, Classes, SyncObjs, Generics.Collections,
+  AMQP.Frame, AMQP.Message, AMQP.Method, AMQP.Types
+  {$IfDef fpc}
+  , AMQP.SyncObjs
+  {$EndIf}
+  ;
 
 Type
   AMQPException = Class(Exception);
@@ -54,7 +62,7 @@ Type
 
   TBlockingQueue<T> = Class
   Strict Protected
-    FGuard     : TCriticalSection;
+    FGuard     : {$IFDEF FPC}TRTLCriticalSection{$ELSE}TCriticalSection{$ENDIF};
     FCondition : TConditionVariableCS;
     FQueue     : TQueue<T>;
   Public
@@ -73,6 +81,7 @@ Type
 implementation
 
 { TAMQPServerProperties }
+
 
 constructor TAMQPServerProperties.Create;
 begin
@@ -143,18 +152,30 @@ end;
 
 function TBlockingQueue<T>.Count: Integer;
 begin
+  {$IFDEF FPC}
+  EnterCriticalSection(FGuard);
+  {$ELSE}
   FGuard.Acquire;
+  {$ENDIF}
   try
     Result := FQueue.Count;
   finally
+    {$IFDEF FPC}
+     LeaveCriticalSection(FGuard);
+    {$ELSE}
     FGuard.Release;
+    {$ENDIF}
   end;
 end;
 
 constructor TBlockingQueue<T>.Create;
 begin
   inherited;
+  {$IFDEF FPC}
+  InitCriticalSection(FGuard);
+  {$ELSE}
   FGuard     := TCriticalSection.Create;
+  {$ENDIF}
   FCondition := TConditionVariableCS.Create;
   FQueue     := TQueue<T>.Create;
 end;
@@ -165,34 +186,54 @@ begin
   FQueue := nil;
   FCondition.Free;
   FCondition := nil;
+  {$IFDEF FPC}
+  DoneCriticalSection(FGuard);
+  {$ELSE}
   FGuard.Free;
   FGuard := nil;
+  {$ENDIF}
   inherited;
 end;
 
 function TBlockingQueue<T>.Get(ATimeOut: LongWord): T;
 begin
+  {$IFDEF FPC}
+  EnterCriticalSection(FGuard);
+  {$ELSE}
   FGuard.Acquire;
+  {$ENDIF}
   try
     while FQueue.Count = 0 do
     begin
-      if FCondition.WaitFor(FGuard, ATimeOut) = wrTimeout then
+      if FCondition.WaitForRTL(FGuard, ATimeOut) = wrTimeout then
        raise AMQPTimeout.Create('Timeout!');
     end;
     Result := FQueue.Dequeue
   finally
-    FGuard.Release;
+  {$IFDEF FPC}
+   LeaveCriticalSection(FGuard);
+  {$ELSE}
+  FGuard.Release;
+  {$ENDIF}
   end;
 end;
 
 procedure TBlockingQueue<T>.Put(Item: T);
 begin
+  {$IFDEF FPC}
+  EnterCriticalSection(FGuard);
+  {$ELSE}
   FGuard.Acquire;
+  {$ENDIF}
   try
     FQueue.Enqueue( Item );
     FCondition.ReleaseAll;
   finally
+    {$IFDEF FPC}
+     LeaveCriticalSection(FGuard);
+    {$ELSE}
     FGuard.Release;
+    {$ENDIF}
   end;
 end;
 

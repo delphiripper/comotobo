@@ -124,16 +124,17 @@ begin
   Consumer2 := nil;
   AMQP := TAMQPConnection.Create;
   AMQP.HeartbeatSecs := 60;
-  AMQP.Host          := '172.17.251.111';
+  AMQP.Host          := '192.168.1.225';//'172.17.251.111';
   AMQP.Port          := 5672;
-  AMQP.VirtualHost   := 'vtc';
-  AMQP.Username      := 'vtc_test';
-  AMQP.Password      := 'vtc_test';
+  AMQP.VirtualHost   := '/';//'vtc';
+  AMQP.Username      := 'admin';//'vtc_test';
+  AMQP.Password      := 'admin';//'vtc_test';
+  AMQP.Timeout := INFINITE;
   AMQP.Connect;
   Channel := AMQP.OpenChannel;
-  Channel.ExchangeDeclare( 'Work', 'direct' );
-  Channel.QueueDeclare( 'WorkQueue' );
-  Channel.QueueBind( 'WorkQueue', 'Work', 'work.unit' );
+  Channel.ExchangeDeclare( 'Work', 'direct', [] );
+  Channel.QueueDeclare( 'WorkQueue' , []);
+  Channel.QueueBind( 'WorkQueue', 'Work', 'work.unit' , []);
 
 end;
 
@@ -158,7 +159,7 @@ begin
   Try
     FChannel.BasicConsume( Queue, 'WorkQueue', 'consumer' );
     Repeat
-      Msg := Queue.Get;
+      Msg := Queue.Get(INFINITE);
       if Msg = nil then
         Terminate;
       if not Terminated then

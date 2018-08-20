@@ -1,11 +1,25 @@
 unit AMQP.StreamHelper;
 
+{$IFDEF FPC}
+        {$MODE DELPHI}
+        {$SmartLink On}
+        {$IFDEF CPUAARCH64}
+                {$DEFINE ARM}
+        {$ENDIF}
+        {$IFDEF CPUARM}
+                {$DEFINE ARM}
+        {$ENDIF}
+{$ENDIF}
+
 interface
 
 Uses
-  System.SysUtils, System.Classes, IdGlobal;
+  SysUtils, Classes, IdGlobal;
 
 Type
+
+  { TStreamHelper }
+
   TStreamHelper = Class helper for TStream
   Private
     function GetAsString(AEncoding: TEncoding): String;
@@ -40,6 +54,45 @@ Type
     Procedure ReadDouble( var D: Double);
     Function AsBytes: TIdBytes;
     Property AsString[ Encoding: TEncoding ]: String read GetAsString write SetAsString;
+
+    {$IfDef FPC}
+    function Skip(Amount: Integer): Integer;
+
+    function WriteData(const Buffer: TBytes; Count: Longint): Longint; overload;
+    function WriteData(const Buffer: Pointer; Count: Longint): Longint; overload;
+    function WriteData(const Buffer: Boolean): Longint; overload;
+    function WriteData(const Buffer: Boolean; Count: Longint): Longint; overload;
+    function WriteData(const Buffer: Char): Longint; overload;
+    function WriteData(const Buffer: Char; Count: Longint): Longint; overload;
+    function WriteData(const Buffer: Int8): Longint; overload;
+    function WriteData(const Buffer: Int8; Count: Longint): Longint; overload;
+    function WriteData(const Buffer: UInt8): Longint; overload;
+    function WriteData(const Buffer: UInt8; Count: Longint): Longint; overload;
+    function WriteData(const Buffer: Int16): Longint; overload;
+    function WriteData(const Buffer: Int16; Count: Longint): Longint; overload;
+    function WriteData(const Buffer: UInt16): Longint; overload;
+    function WriteData(const Buffer: UInt16; Count: Longint): Longint; overload;
+    function WriteData(const Buffer: Int32): Longint; overload;
+    function WriteData(const Buffer: Int32; Count: Longint): Longint; overload;
+    function WriteData(const Buffer: UInt32): Longint; overload;
+    function WriteData(const Buffer: UInt32; Count: Longint): Longint; overload;
+    function WriteData(const Buffer: Int64): Longint; overload;
+    function WriteData(const Buffer: Int64; Count: Longint): Longint; overload;
+    function WriteData(const Buffer: UInt64): Longint; overload;
+    function WriteData(const Buffer: UInt64; Count: Longint): Longint; overload;
+    function WriteData(const Buffer: Single): Longint; overload;
+    function WriteData(const Buffer: Single; Count: Longint): Longint; overload;
+    function WriteData(const Buffer: Double): Longint; overload;
+    function WriteData(const Buffer: Double; Count: Longint): Longint; overload;
+    {$IfNDef ARM}
+    function WriteData(const Buffer: Extended): Longint; overload;
+    function WriteData(const Buffer: Extended; Count: Longint): Longint; overload;
+    function WriteData(const Buffer: TExtended80Rec): Longint; overload;
+    function WriteData(const Buffer: TExtended80Rec; Count: Longint): Longint; overload;
+    {$EndIf}
+
+    function Write(const Buffer: TBytes; Offset, Count: Longint): Longint; overload;
+    {$EndIf}
   End;
 
 implementation
@@ -112,7 +165,7 @@ begin
   S := String( Str );
 end;
 
-Procedure TStreamHelper.ReadMSB(var Buffer; Count: Integer);
+procedure TStreamHelper.ReadMSB(var Buffer; Count: Integer);
 var
   Cnt: Integer;
 begin
@@ -168,6 +221,316 @@ begin
     StringStream.Free;
   End;
 end;
+
+{$ifdef fpc}
+function TStreamHelper.Skip(Amount: Integer): Integer;
+var
+  P: Integer;
+begin
+  P := Position;
+  Result := Seek(Amount, soCurrent) - P;
+end;
+{$endif}
+
+{$ifdef fpc}
+function TStreamHelper.Write(const Buffer: TBytes; Offset, Count: Longint
+  ): Longint;
+begin
+    Result := Write(Buffer[Offset], Count);
+end;
+{$endif}
+
+{$ifdef fpc}
+function TStreamHelper.WriteData(const Buffer: Boolean): Longint;
+begin
+  Result := Write(Buffer, SizeOf(Buffer));
+end;
+{$endif}
+
+{$ifdef fpc}
+function TStreamHelper.WriteData(const Buffer: Boolean; Count: Longint
+  ): Longint;
+const
+  BufSize = SizeOf(Buffer);
+begin
+  if Count > BufSize then
+    Result := Write(Buffer, BufSize) + Skip(Count - BufSize)
+  else
+    Result := Write(Buffer, Count)
+end;
+{$endif}
+
+{$ifdef fpc}
+function TStreamHelper.WriteData(const Buffer: Char): Longint;
+begin
+  Result := Write(Buffer, SizeOf(Buffer));
+end;
+{$endif}
+
+{$ifdef fpc}
+function TStreamHelper.WriteData(const Buffer: Char; Count: Longint): Longint;
+const
+  BufSize = SizeOf(Buffer);
+begin
+  if Count > BufSize then
+    Result := Write(Buffer, BufSize) + Skip(Count - BufSize)
+  else
+    Result := Write(Buffer, Count)
+end;
+{$endif}
+
+{$ifdef fpc}
+function TStreamHelper.WriteData(const Buffer: Double): Longint;
+begin
+  Result := Write(Buffer, SizeOf(Buffer));
+end;
+{$endif}
+
+{$ifdef fpc}
+function TStreamHelper.WriteData(const Buffer: Double; Count: Longint): Longint;
+const
+  BufSize = SizeOf(Buffer);
+begin
+  if Count > BufSize then
+    Result := Write(Buffer, BufSize) + Skip(Count - BufSize)
+  else
+    Result := Write(Buffer, Count)
+end;
+{$endif}
+
+{$ifdef fpc}
+{$ifndef ARM}
+function TStreamHelper.WriteData(const Buffer: Extended): Longint;
+begin
+  Result := Write(Buffer, SizeOf(Buffer));
+end;
+{$endif}
+{$endif}
+
+{$ifdef fpc}
+{$ifndef ARM}
+function TStreamHelper.WriteData(const Buffer: Extended; Count: Longint
+  ): Longint;
+const
+  BufSize = SizeOf(Buffer);
+begin
+  if Count > BufSize then
+    Result := Write(Buffer, BufSize) + Skip(Count - BufSize)
+  else
+    Result := Write(Buffer, Count)
+end;
+{$endif}
+{$endif}
+
+{$ifdef fpc}
+function TStreamHelper.WriteData(const Buffer: Int16): Longint;
+begin
+  Result := Write(Buffer, SizeOf(Buffer));
+end;
+{$endif}
+
+{$ifdef fpc}
+function TStreamHelper.WriteData(const Buffer: Int16; Count: Longint): Longint;
+const
+  BufSize = SizeOf(Buffer);
+begin
+  if Count > BufSize then
+    Result := Write(Buffer, BufSize) + Skip(Count - BufSize)
+  else
+    Result := Write(Buffer, Count)
+end;
+{$EndIf}
+
+{$ifdef fpc}
+function TStreamHelper.WriteData(const Buffer: Int32): Longint;
+begin
+  Result := Write(Buffer, SizeOf(Buffer));
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: Int32; Count: Longint): Longint;
+const
+  BufSize = SizeOf(Buffer);
+begin
+  if Count > BufSize then
+    Result := Write(Buffer, BufSize) + Skip(Count - BufSize)
+  else
+    Result := Write(Buffer, Count)
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: Int64): Longint;
+begin
+  Result := Write(Buffer, SizeOf(Buffer));
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: Int64; Count: Longint): Longint;
+const
+  BufSize = SizeOf(Buffer);
+begin
+  if Count > BufSize then
+    Result := Write(Buffer, BufSize) + Skip(Count - BufSize)
+  else
+    Result := Write(Buffer, Count)
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: Int8): Longint;
+begin
+  Result := Write(Buffer, SizeOf(Buffer));
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: Int8; Count: Longint): Longint;
+const
+  BufSize = SizeOf(Buffer);
+begin
+  if Count > BufSize then
+    Result := Write(Buffer, BufSize) + Skip(Count - BufSize)
+  else
+    Result := Write(Buffer, Count)
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: Pointer; Count: Longint
+  ): Longint;
+begin
+  Result := Write(Buffer^, Count);
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: Single): Longint;
+begin
+  Result := Write(Buffer, SizeOf(Buffer));
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: Single; Count: Longint): Longint;
+const
+  BufSize = SizeOf(Buffer);
+begin
+  if Count > BufSize then
+    Result := Write(Buffer, BufSize) + Skip(Count - BufSize)
+  else
+    Result := Write(Buffer, Count)
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: TBytes; Count: Longint): Longint;
+begin
+  Result := Write(Buffer, 0, Count);
+end;
+{$EndIf}
+
+{$IfDef fpc}
+{$IfNDef ARM}
+function TStreamHelper.WriteData(const Buffer: TExtended80Rec): Longint;
+begin
+  Result := Write(Buffer, SizeOf(Buffer));
+end;
+{$EndIf}
+{$EndIf}
+
+{$IfDef fpc}
+{$IfNDef ARM}
+function TStreamHelper.WriteData(const Buffer: TExtended80Rec; Count: Longint
+  ): Longint;
+const
+  BufSize = SizeOf(Buffer);
+begin
+  if Count > BufSize then
+    Result := Write(Buffer, BufSize) + Skip(Count - BufSize)
+  else
+    Result := Write(Buffer, Count)
+end;
+{$EndIf}
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: UInt16): Longint;
+begin
+  Result := Write(Buffer, SizeOf(Buffer));
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: UInt16; Count: Longint): Longint;
+const
+  BufSize = SizeOf(Buffer);
+begin
+  if Count > BufSize then
+    Result := Write(Buffer, BufSize) + Skip(Count - BufSize)
+  else
+    Result := Write(Buffer, Count)
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: UInt32): Longint;
+begin
+  Result := Write(Buffer, SizeOf(Buffer));
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: UInt32; Count: Longint): Longint;
+const
+  BufSize = SizeOf(Buffer);
+begin
+  if Count > BufSize then
+    Result := Write(Buffer, BufSize) + Skip(Count - BufSize)
+  else
+    Result := Write(Buffer, Count)
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: UInt64): Longint;
+begin
+  Result := Write(Buffer, SizeOf(Buffer));
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: UInt64; Count: Longint): Longint;
+const
+  BufSize = SizeOf(Buffer);
+begin
+  if Count > BufSize then
+    Result := Write(Buffer, BufSize) + Skip(Count - BufSize)
+  else
+    Result := Write(Buffer, Count)
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: UInt8): Longint;
+begin
+  Result := Write(Buffer, SizeOf(Buffer));
+end;
+{$EndIf}
+
+{$IfDef fpc}
+function TStreamHelper.WriteData(const Buffer: UInt8; Count: Longint): Longint;
+const
+  BufSize = SizeOf(Buffer);
+begin
+  if Count > BufSize then
+    Result := Write(Buffer, BufSize) + Skip(Count - BufSize)
+  else
+    Result := Self.Write(Buffer, Count)
+end;
+{$EndIf}
 
 procedure TStreamHelper.WriteDouble(D: Double);
 begin

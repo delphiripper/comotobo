@@ -1,9 +1,12 @@
 unit AMQP.MessageProperties;
+{$IFDEF FPC}
+        {$MODE DELPHI}
+{$ENDIF}
 
 interface
 
 Uses
-  System.Classes, AMQP.Types, AMQP.IMessageProperties;
+  Classes, AMQP.Types, AMQP.IMessageProperties;
 
 Type
   TAMQPMessageProperties = class(TInterfacedObject, IAMQPMessageProperties)

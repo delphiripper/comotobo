@@ -1,9 +1,12 @@
 unit AMQP.Types;
+{$IFDEF FPC}
+        {$MODE DELPHI}
+{$ENDIF}
 
 interface
 
 Uses
-  System.SysUtils, System.Classes, System.Generics.Collections,
+  SysUtils, Classes, Generics.Collections,
   AMQP.StreamHelper, AMQP.Arguments;
 
 const
@@ -187,7 +190,7 @@ Type
   TShortString = Class(TAMQPValue)
   Strict Protected
     FValue: String;
-    procedure SetValue(const Value: String); Virtual;
+    procedure SetValue(const AValue: String); Virtual;
   Public
     function Size: Cardinal; override;
     Property Value: String read FValue write SetValue;
@@ -199,7 +202,7 @@ Type
 
   TLongString = Class(TShortString)
   Strict Protected
-    procedure SetValue(const Value: String); Override;
+    procedure SetValue(const AValue: String); Override;
   Public
 
     Procedure SaveToStream(AStream: TStream); Override;
@@ -307,7 +310,7 @@ Function PadRight(S: String; PaddedLength: Integer): String;
 implementation
 
 Uses
-  System.Math, System.Variants;
+  Math, Variants;
 
 type
   PByteArray = ^TByteArray;
@@ -473,7 +476,10 @@ begin
       ValuePair.SaveToStream(TableStream);
     Size := TableStream.Size;
     AStream.WriteUInt32(Size);
-    AStream.CopyFrom(TableStream, -1);
+    {$IFDEF FPC}
+    TableStream.Position:= 0;
+    {$ENDIF}
+    AStream.CopyFrom(TableStream, {$IFDEF FPC}Size{$ELSE}-1{$ENDIF});
   Finally
     TableStream.Free;
   End;
@@ -553,11 +559,11 @@ begin
   AStream.WriteShortStr(Value);
 end;
 
-procedure TShortString.SetValue(const Value: String);
+procedure TShortString.SetValue(const AValue: String);
 begin
-  if Value.Length > 255 then
+  if AValue.Length > 255 then
     raise EInvalidArgument.Create('Max length exceeded');
-  FValue := Value;
+  FValue := AValue;
 end;
 
 function TShortString.Size: Cardinal;
@@ -601,9 +607,9 @@ begin
     AStream.WriteData(Char);
 end;
 
-procedure TLongString.SetValue(const Value: String);
+procedure TLongString.SetValue(const AValue: String);
 begin
-  FValue := Value;
+  FValue := AValue;
 end;
 
 function TLongString.Size: Cardinal;
@@ -1225,7 +1231,10 @@ begin
     end;
     LSize := ArrayStream.Size;
     AStream.WriteUInt32(LSize);
-    AStream.CopyFrom(ArrayStream, -1);
+    {$IfDef FPC}
+    ArrayStream.Position:=0;
+    {$EndIf}
+    AStream.CopyFrom(ArrayStream, {$IfDef FPC}LSize{$Else}-1{$EndIf});
   Finally
     ArrayStream.Free;
   End;

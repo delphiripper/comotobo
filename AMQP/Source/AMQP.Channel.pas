@@ -1,9 +1,16 @@
 unit AMQP.Channel;
-
+{$IfDef fpc}
+        {$Mode delphi}
+        {$SmartLink On}
+{$EndIf}
 interface
 
 Uses
+  {$ifdef fpc}
+  SysUtils, Classes, Generics.Collections,
+  {$else}
   System.SysUtils, System.Classes, System.Generics.Collections,
+  {$endif}
   AMQP.Method, AMQP.Frame, AMQP.Message, AMQP.Protocol, AMQP.Interfaces, AMQP.Classes, AMQP.IMessageProperties, AMQP.Arguments;
 
 Type
@@ -52,18 +59,18 @@ Type
     Function GetState     : TAMQPChannelState;
     Function GetConsumers : TObjectList<TConsumer>;
 
-    Procedure ExchangeDeclare( AExchangeName, AType: String; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False; Arguments: TArguments = [] ); overload;
-    Procedure ExchangeDeclare( AExchangeName: String; AType: TExchangeType; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False; Arguments: TArguments = [] ); overload;
+    Procedure ExchangeDeclare( AExchangeName, AType: String; Arguments: TArguments; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False); overload;
+    Procedure ExchangeDeclare( AExchangeName: String; AType: TExchangeType; Arguments: TArguments; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False); overload;
     Procedure ExchangeDelete( AExchangeName: String; AIfUnused: Boolean = True; ANoWait: Boolean = False );
-    Procedure ExchangeBind(ADestination, ASource, ARoutingKey: String; ANoWait: Boolean = False; Arguments: TArguments = []);
-    Procedure ExchangeUnBind(ADestination, ASource, ARoutingKey: String; ANoWait: Boolean = False; Arguments: TArguments = []);
+    Procedure ExchangeBind(ADestination, ASource, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean = False);
+    Procedure ExchangeUnBind(ADestination, ASource, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean = False);
 
-    Procedure QueueDeclare( AQueueName: String; APassive: Boolean = False; ADurable: Boolean = True; AExclusive: Boolean = False;
-                            AAutoDelete: Boolean = False; ANoWait: Boolean = False; Arguments: TArguments = [] );
-    Procedure QueueBind( AQueueName, AExchangeName, ARoutingKey: String; ANoWait: Boolean = False; Arguments: TArguments = [] );
+    Procedure QueueDeclare( AQueueName: String; Arguments: TArguments; APassive: Boolean = False; ADurable: Boolean = True; AExclusive: Boolean = False;
+                            AAutoDelete: Boolean = False; ANoWait: Boolean = False);
+    Procedure QueueBind( AQueueName, AExchangeName, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean = False);
     Procedure QueuePurge( AQueueName: String; ANoWait: Boolean = False );
     Procedure QueueDelete( AQueueName: String; AIfUnused: Boolean = True; AIfEmpty: Boolean = True; ANoWait: Boolean = False );
-    Procedure QueueUnBind( AQueueName, AExchangeName, ARoutingKey: String; Arguments: TArguments = [] );
+    Procedure QueueUnBind( AQueueName, AExchangeName, ARoutingKey: String; Arguments: TArguments);
 
     Procedure BasicQOS(APrefetchSize: Cardinal; APrefetchCount: Word; AGlobal: Boolean = False);
 
@@ -189,7 +196,7 @@ begin
   inherited;
 end;
 
-procedure TAMQPChannel.ExchangeDeclare(AExchangeName, AType: String; APassive, ADurable, ANoWait: Boolean; Arguments: TArguments);
+procedure TAMQPChannel.ExchangeDeclare(AExchangeName, AType: String; Arguments: TArguments; APassive, ADurable, ANoWait: Boolean);
 var
   Method: TAMQPMethod;
 begin
@@ -210,8 +217,7 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.ExchangeBind(ADestination, ASource, ARoutingKey: String; ANoWait: Boolean;
-  Arguments: TArguments);
+procedure TAMQPChannel.ExchangeBind(ADestination, ASource, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean);
 var
   Method: TAMQPMethod;
 begin
@@ -230,9 +236,9 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.ExchangeDeclare(AExchangeName: String; AType: TExchangeType; APassive, ADurable, ANoWait: Boolean; Arguments: TArguments);
+procedure TAMQPChannel.ExchangeDeclare(AExchangeName: String; AType: TExchangeType; Arguments: TArguments; APassive, ADurable, ANoWait: Boolean);
 begin
-  ExchangeDeclare( AExchangeName, ExchangeTypeStr[AType], APassive, ADurable, ANoWait, Arguments );
+  ExchangeDeclare( AExchangeName, ExchangeTypeStr[AType], Arguments, APassive, ADurable, ANoWait);
 end;
 
 procedure TAMQPChannel.ExchangeDelete(AExchangeName: String; AIfUnused, ANoWait: Boolean);
@@ -253,8 +259,7 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.ExchangeUnBind(ADestination, ASource, ARoutingKey: String; ANoWait: Boolean;
-  Arguments: TArguments);
+procedure TAMQPChannel.ExchangeUnBind(ADestination, ASource, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean);
 var
   Method: TAMQPMethod;
 begin
@@ -564,7 +569,7 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.QueueBind(AQueueName, AExchangeName, ARoutingKey: String; ANoWait: Boolean; Arguments: TArguments);
+procedure TAMQPChannel.QueueBind(AQueueName, AExchangeName, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean);
 var
   Method: TAMQPMethod;
 begin
@@ -584,7 +589,7 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.QueueDeclare(AQueueName: String; APassive, ADurable, AExclusive, AAutoDelete, ANoWait: Boolean; Arguments: TArguments);
+procedure TAMQPChannel.QueueDeclare(AQueueName: String; Arguments: TArguments; APassive, ADurable, AExclusive, AAutoDelete, ANoWait: Boolean);
 var
   Method: TAMQPMethod;
 begin

@@ -29,7 +29,23 @@ uses
   Neas.PowermanApi.Notifications.DTOs.V1 in 'Neas.PowermanApi.Notifications.DTOs.V1.pas',
   AMQP.IMessageProperties in '..\..\AMQP\Source\AMQP.IMessageProperties.pas',
   DJSON in '..\..\JSON\DJSON.pas',
-  AMQP.Arguments in '..\..\AMQP\Source\AMQP.Arguments.pas';
+  AMQP.Arguments in '..\..\AMQP\Source\AMQP.Arguments.pas',
+  MT.Classes in '..\..\MassTransitMsg\MT.Classes.pas',
+  MT.Interfaces in '..\..\MassTransitMsg\MT.Interfaces.pas',
+  MT.RTTI in '..\..\MassTransitMsg\MT.RTTI.pas',
+  MVCFramework.Serializer.Abstract in '..\..\JSON\MVCFramework.Serializer.Abstract.pas',
+  MVCFramework.Serializer.Commons in '..\..\JSON\MVCFramework.Serializer.Commons.pas',
+  MVCFramework.Serializer.Defaults in '..\..\JSON\MVCFramework.Serializer.Defaults.pas',
+  MVCFramework.Serializer.Intf in '..\..\JSON\MVCFramework.Serializer.Intf.pas',
+  MVCFramework.Serializer.JSON.CustomTypes in '..\..\JSON\MVCFramework.Serializer.JSON.CustomTypes.pas',
+  MVCFramework.Serializer.JSON in '..\..\JSON\MVCFramework.Serializer.JSON.pas',
+  MVCFramework.Serializer.JsonDataObjects.CustomTypes in '..\..\JSON\MVCFramework.Serializer.JsonDataObjects.CustomTypes.pas',
+  MVCFramework.Serializer.JsonDataObjects in '..\..\JSON\MVCFramework.Serializer.JsonDataObjects.pas',
+  MVCFramework.Commons in '..\..\JSON\MVCFramework.Commons.pas',
+  MVCFramework.TypesAliases in '..\..\JSON\MVCFramework.TypesAliases.pas',
+  MT.Serializer in '..\..\MassTransitMsg\MT.Serializer.pas',
+  Korus.Esphere.Message.DocumentEvent in '..\..\MassTransitMsg\Korus.Esphere.Message.DocumentEvent.pas',
+  MT.Test in '..\..\MassTransitMsg\MT.Test.pas';
 
 {$R *.res}
 

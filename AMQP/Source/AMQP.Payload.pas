@@ -1,9 +1,13 @@
 unit AMQP.Payload;
+{$IFDEF FPC}
+        {$MODE DELPHI}
+        {$SmartLink On}
+{$ENDIF}
 
 interface
 
 Uses
-  System.Classes;
+  Classes;
 
 Type
   TAMQPPayload = Class

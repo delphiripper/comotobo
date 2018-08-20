@@ -1,9 +1,12 @@
 unit AMQP.Method;
-
+{$IFDEF FPC}
+        {$MODE DELPHI}
+        {$SmartLink On}
+{$ENDIF}
 interface
 
 Uses
-  System.Classes, System.Generics.Collections, AMQP.Types, AMQP.Payload, AMQP.Protocol;
+  Classes, Generics.Collections, AMQP.Types, AMQP.Payload, AMQP.Protocol;
 
 Type
   TAMQPMethod = Class(TAMQPPayload)
@@ -33,7 +36,7 @@ Type
 implementation
 
 Uses
-  System.Math, System.SysUtils, AMQP.Classes;
+  Math, SysUtils, AMQP.Classes;
 
 { TAMQPMethod }
 

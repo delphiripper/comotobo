@@ -1,9 +1,13 @@
 unit AMQP.Header;
+{$IFDEF FPC}
+        {$MODE DELPHI}
+        {$SmartLink On}
+{$ENDIF}
 
 interface
 
 Uses
-  System.Classes, AMQP.Payload, AMQP.IMessageProperties;
+  Classes, AMQP.Payload, AMQP.IMessageProperties;
 
 Type
   TAMQPHeader = Class(TAMQPPayload)

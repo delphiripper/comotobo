@@ -1,9 +1,12 @@
 unit AMQP.IMessageProperties;
+{$IFDEF FPC}
+        {$MODE DELPHI}
+{$ENDIF}
 
 interface
 
 Uses
-  System.Classes, AMQP.Types;
+  Classes, AMQP.Types;
 
 Type
   IAMQPMessageProperties = interface ['{2E874719-4F4E-4B62-BBD0-4F9E4C56C7CD}']
