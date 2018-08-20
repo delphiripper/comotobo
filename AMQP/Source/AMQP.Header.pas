@@ -1,8 +1,5 @@
+{$I AMQP.Options.inc}
 unit AMQP.Header;
-{$IFDEF FPC}
-        {$MODE DELPHI}
-        {$SmartLink On}
-{$ENDIF}
 
 interface
 

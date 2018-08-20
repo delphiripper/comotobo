@@ -1,3 +1,4 @@
+{$I AMQP.Options.inc}  
 unit AMQP.Frame;
 
 interface

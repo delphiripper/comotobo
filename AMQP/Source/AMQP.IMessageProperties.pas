@@ -1,7 +1,5 @@
+{$I AMQP.Options.inc}  
 unit AMQP.IMessageProperties;
-{$IFDEF FPC}
-        {$MODE DELPHI}
-{$ENDIF}
 
 interface
 

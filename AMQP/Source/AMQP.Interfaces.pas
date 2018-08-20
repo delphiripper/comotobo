@@ -1,8 +1,5 @@
+{$I AMQP.Options.inc}
 unit AMQP.Interfaces;
-{$IfDef FPC}
-        {$Mode delphi}
-        {$SmartLink On}
-{$EndIf}
 interface
 
 Uses

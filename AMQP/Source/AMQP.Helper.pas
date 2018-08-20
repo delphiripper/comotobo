@@ -1,3 +1,5 @@
+{$I AMQP.Options.inc}
+
 unit AMQP.Helper;
 
 interface

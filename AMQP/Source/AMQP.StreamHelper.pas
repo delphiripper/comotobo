@@ -1,15 +1,6 @@
-unit AMQP.StreamHelper;
+{$I AMQP.Options.inc}
 
-{$IFDEF FPC}
-        {$MODE DELPHI}
-        {$SmartLink On}
-        {$IFDEF CPUAARCH64}
-                {$DEFINE ARM}
-        {$ENDIF}
-        {$IFDEF CPUARM}
-                {$DEFINE ARM}
-        {$ENDIF}
-{$ENDIF}
+unit AMQP.StreamHelper;
 
 interface
 

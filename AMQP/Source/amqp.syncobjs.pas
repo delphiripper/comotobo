@@ -1,8 +1,7 @@
+{$I AMQP.Options.inc}
+
 unit AMQP.SyncObjs;
-{$IfDef fpc}
-        {$SmartLink On}
-        {$Mode delphi}
-{$EndIf}
+
 interface
 
 uses

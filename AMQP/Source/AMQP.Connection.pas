@@ -1,14 +1,11 @@
+{$I AMQP.Options.inc}
 unit AMQP.Connection;
-{$IfDef FPC}
-        {$Mode delphi}
-        {$Define NO_HEARTBEAT}
-        {$SmartLink On}
-{$EndIf}
+
 interface
 
 Uses
   {$IfDef FPC}
-  SysUtils, Classes, Generics.Collections, Generics.Defaults, SyncObjs,
+  SysUtils, Classes, Generics.Collections, Generics.Defaults, SyncObjs, fptimer,
   {$Else}
   System.SysUtils, System.Classes, System.Generics.Collections, System.Generics.Defaults, System.SyncObjs, VCL.ExtCtrls,
   {$EndIf}
@@ -75,9 +72,7 @@ Type
     FOnDebug          : TDebugEvent;
     FIsOpen           : Boolean;
     FServerDisconnected: Boolean;
-    {$IfNDef NO_HEARTBEAT}
-    FHeartbeatTimer   : TTimer;
-    {$EndIf}
+    FHeartbeatTimer   : {$IfDef FPC}TFPTimer{$Else}TTimer{$EndIf};
     FTimeout          : LongWord;
     // get / set methods
     function GetHost: String;
@@ -279,10 +274,8 @@ begin
   FServerProperties.ReadConnectionOpenOK( Frame.Payload.AsMethod );
   FIsOpen := True;
   FServerDisconnected := False;
-  {$IfNDef NO_HEARTBEAT}
   FHeartbeatTimer.Interval := FHeartbeatSecs * 1000;
   FHeartbeatTimer.Enabled  := True;
-  {$EndIf}
 end;
 
 constructor TAMQPConnection.Create;
@@ -312,12 +305,10 @@ begin
   FHeartbeatSecs    := 180;
   FMaxFrameSize     := 131072;
   FServerDisconnected := False;
-  {$IfNDef NO_HEARTBEAT}
-  FHeartbeatTimer   := TTimer.Create( nil );
+  FHeartbeatTimer   := {$IfDef FPC}TFPTimer{$Else}TTimer{$EndIf}.Create( nil );
   FHeartbeatTimer.Enabled  := False;
   FHeartbeatTimer.Interval := 60000;
   FHeartbeatTimer.OnTimer  := HeartbeatTimer;
-  {$EndIf}
 end;
 
 function TAMQPConnection.DefaultMessageProperties: IAMQPMessageProperties;
@@ -338,9 +329,7 @@ begin
     FTCP.Free;
     FSendLock.Free;
     FDebugLock.Free;
-    {$IfNDef NO_HEARTBEAT}
     FHeartbeatTimer.Free;
-    {$EndIf}
     inherited;
   End;
 end;
@@ -506,16 +495,12 @@ begin
   if IsOpen then
     WriteHeartbeat
   else
-    {$IfNDef NO_HEARTBEAT}
      FHeartbeatTimer.Enabled := False;
-    {$EndIf}
 end;
 
 procedure TAMQPConnection.InternalDisconnect(ACloseConnection: Boolean);
 begin
-  {$IfNDef NO_HEARTBEAT}
   FHeartbeatTimer.Enabled := False;
-  {$EndIf}
   Try
     CloseAllChannels;
     if ACloseConnection then
