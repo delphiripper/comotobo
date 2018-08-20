@@ -299,7 +299,7 @@ begin
   Try
     Repeat
       BodyFrame := FDeliverQueue.Extract( FDeliverQueue[0] );
-      Stream.CopyFrom( BodyFrame.Payload.AsBody.Stream, -1 );
+      Stream.CopyFrom( BodyFrame.Payload.AsBody.Stream, 0);
       BodyFrame := nil;
     Until Stream.Size >= HeaderFrame.Payload.AsHeader.BodySize;
     Result := TAMQPMessage.Create;
@@ -427,7 +427,7 @@ begin
         raise AMQPException.Create('Expected header frame');
       Repeat
         BodyFrame := FQueue.Get(FConnection.Timeout);
-        Stream.CopyFrom( BodyFrame.Payload.AsBody.Stream, -1 );
+        Stream.CopyFrom( BodyFrame.Payload.AsBody.Stream, 0);
       Until Stream.Size >= HeaderFrame.Payload.AsHeader.BodySize;
       Result := TAMQPMessage.Create;
       Self.GetInterface( IAMQPBaseChannel, BaseChannel );

@@ -107,7 +107,7 @@ var
 begin
   StringStream := TStringStream.Create( '', AEncoding );
   Try
-    StringStream.CopyFrom( Self, -1 );
+    StringStream.CopyFrom( Self, 0 );
     Result := StringStream.DataString;
   Finally
     StringStream.Free;
@@ -207,7 +207,7 @@ var
 begin
   StringStream := TStringStream.Create( Value, AEncoding );
   Try
-    Self.CopyFrom( StringStream, -1 );
+    Self.CopyFrom( StringStream, 0 );
   Finally
     StringStream.Free;
   End;

@@ -474,10 +474,7 @@ begin
       ValuePair.SaveToStream(TableStream);
     Size := TableStream.Size;
     AStream.WriteUInt32(Size);
-    {$IFDEF FPC}
-    TableStream.Position:= 0;
-    {$ENDIF}
-    AStream.CopyFrom(TableStream, {$IFDEF FPC}Size{$ELSE}-1{$ENDIF});
+    AStream.CopyFrom(TableStream, 0);
   Finally
     TableStream.Free;
   End;
@@ -1229,10 +1226,7 @@ begin
     end;
     LSize := ArrayStream.Size;
     AStream.WriteUInt32(LSize);
-    {$IfDef FPC}
-    ArrayStream.Position:=0;
-    {$EndIf}
-    AStream.CopyFrom(ArrayStream, {$IfDef FPC}LSize{$Else}-1{$EndIf});
+    AStream.CopyFrom(ArrayStream, 0);
   Finally
     ArrayStream.Free;
   End;
