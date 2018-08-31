@@ -273,6 +273,8 @@ Type
     Destructor Destroy; Override;
   End;
 
+  { TFieldTable }
+
   TFieldTable = Class(TAMQPValue)
   Strict Private
     FFields: TObjectList<TFieldValuePair>;
@@ -290,6 +292,7 @@ Type
     function Add(AName: String; AValue: Double): TFieldTable; overload;
     function Add(AName: String; AValue: Cardinal): TFieldTable; overload;
     function Add(AName: String; AValue: String): TFieldTable; overload;
+    function Add(AName: String; AValue: Boolean): TFieldTable; overload;
     Procedure Clear;
     Procedure Assign(AFieldTable: TFieldTable); Overload;
     Procedure Assign(AArguments: TArguments); Overload;
@@ -615,6 +618,11 @@ end;
 function TFieldTable.Add(AName, AValue: String): TFieldTable;
 begin
   Result := Add(AName, TLongString.Create(AValue));
+end;
+
+function TFieldTable.Add(AName: String; AValue: Boolean): TFieldTable;
+begin
+ Result := Add(AName, TBoolean.Create(AValue));
 end;
 
 { TFieldValuePair }

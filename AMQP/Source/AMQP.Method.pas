@@ -144,8 +144,8 @@ begin
               Add( 'mechanism',         TShortString.Create( 'AMQPLAIN' ) );
               Add( 'response',          TFieldTable.Create );
               Add( 'locale',            TShortString.Create( 'en_US' ) );
-              Field[ 'client-properties' ].AsFieldTable.Add( 'library',         TLongString.Create( 'DelphiAMQP' ) );
-              Field[ 'client-properties' ].AsFieldTable.Add( 'library_version', TLongString.Create( '1.0' ) );
+              Field[ 'client-properties' ].AsFieldTable.Add( 'library',         TLongString.Create( 'Delphi/FPC-AMQP' ) );
+              Field[ 'client-properties' ].AsFieldTable.Add( 'library_version', TLongString.Create( '2.0' ) );
               Field[ 'response' ].AsFieldTable.Add( 'LOGIN',    TLongString.Create( '' ) );
               Field[ 'response' ].AsFieldTable.Add( 'PASSWORD', TLongString.Create( '' ) );
             End;

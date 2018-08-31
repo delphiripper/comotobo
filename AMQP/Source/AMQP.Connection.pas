@@ -65,6 +65,7 @@ Type
     FApplicationID    : String;
     FPlatformID       : String;
     FProductID        : String;
+    FHostname         : String;
     FHeartbeatSecs    : Word;
     FMaxFrameSize     : Cardinal;
     FLastHeartbeat    : TDateTime;
@@ -117,6 +118,7 @@ Type
     Property ApplicationID    : String      read FApplicationID write FApplicationID;
     Property ProductID        : String      read FProductID     write FProductID;
     Property PlatformID       : String      read FPlatformID    write FPlatformID;
+    Property Hostname         : String      read FHostname      write FHostname;
     Property HeartbeatSecs    : Word        read FHeartbeatSecs write FHeartbeatSecs;
     Property MaxFrameSize     : Cardinal    read FMaxFrameSize  write SetMaxFrameSize;
     Property OnWireDebug      : TWireEvent  read FOnWireDebug   write FOnWireDebug;
@@ -149,19 +151,32 @@ Uses
 {$IfDef WINDOWS}
   Windows,
 {$EndIf}
-  AMQP.MessageProperties, AMQP.Payload, AMQP.Helper, AMQP.StreamHelper, AMQP.Types, AMQP.Channel;
+{$IfDef UNIX}
+  Unix,
+{$EndIf}
+  AMQP.MessageProperties,
+  AMQP.Payload,
+  AMQP.Helper,
+  AMQP.StreamHelper,
+  AMQP.Types,
+  AMQP.Channel;
 
 function GetLocalComputerName : string;
+{$IfDef WINDOWS}
 var
   StrLength : dword;
   CharArray : array [0..MAX_PATH] of char;
+{$EndIf}
 begin
-  StrLength := MAX_PATH;
 {$IfDef WINDOWS}
+  StrLength := MAX_PATH;
   if GetComputerName(CharArray, StrLength) and (StrLength > 0) then
     result := CharArray
   else
     result := '';
+{$EndIf}
+{$IfDef UNIX}
+  Result := Unix.GetHostName;
 {$EndIf}
 end;
 
@@ -238,10 +253,25 @@ begin
 
   Method := TAMQPMethod.CreateMethod( AMQP_CONNECTION_START_OK );
   Try
-    Method.Field[ 'client-properties' ].AsFieldTable.Add( 'client_api',  TLongString.Create( ClientAPI ) );
-    Method.Field[ 'client-properties' ].AsFieldTable.Add( 'product',     TLongString.Create( ProductID ) );
-    Method.Field[ 'client-properties' ].AsFieldTable.Add( 'platform',    TLongString.Create( PlatformID ) );
-    Method.Field[ 'client-properties' ].AsFieldTable.Add( 'application', TLongString.Create( ApplicationID ) );
+
+    if ClientAPI <> '' then
+      Method.Field[ 'client-properties' ].AsFieldTable.Add( 'client_api',  TLongString.Create( ClientAPI ) );
+
+    if ProductID <> '' then
+      Method.Field[ 'client-properties' ].AsFieldTable.Add( 'product',   TLongString.Create( ProductID ));
+
+    Method.Field[ 'client-properties' ].AsFieldTable
+      .Add( 'platform',    TLongString.Create( PlatformID ) )
+      .Add( 'application', TLongString.Create( ApplicationID ) )
+      .Add( 'hostname',    TLongString.Create( Hostname ) )
+      .Add( 'capabilites', TFieldTable.Create
+                  .Add('publisher_confirms', True)
+                  .Add('exchange_exchange_bindings', true)
+                  .Add('basic,nack', true)
+                  .Add('consumer_cancel_notify', true)
+                  .Add('queue-mode', 'lazy, default')
+                  .Add('exchange_type', 'topic, headers, fanout, direct'));
+
     Method.Field[ 'response' ].AsFieldTable.Field[ 'LOGIN'    ].AsLongString.Value := FUsername;
     Method.Field[ 'response' ].AsFieldTable.Field[ 'PASSWORD' ].AsLongString.Value := FPassword;
     WriteMethod( 0, Method );
@@ -288,10 +318,11 @@ begin
   FUsername         := '';
   FPassword         := '';
   FVirtualHost      := '/';
-  FClientAPI        := 'DelphiAMQP';
+  FClientAPI        := '';
   FApplicationID    := ExtractFileName(ParamStr(0));
-  FProductID        := 'ProductId';
-  FPlatformID       := GetLocalComputerName;
+  FProductID        := '';
+  FPlatformID       := {$IfDef FPC}{$I %FPCTARGETCPU%}+'-'+{$I %FPCTARGETOS%}{$Else}'Windows'{$EndIf};
+  FHostname         := GetLocalComputerName;
   FChannels         := TThreadList<IAMQPChannel>.Create;
   FLastHeartbeat    := 0;
   FOnWireDebug      := nil;

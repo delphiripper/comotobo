@@ -24,6 +24,44 @@ Type
     Destructor Destroy; Override;
   End;
 
+const
+{$IfDef FPC}
+   sCompilDef = 'FPC' + {$I %FPCVERSION%};
+  {$If Defined(CPUARM)}
+     sArchitectureDef = 'ARM';
+  {$ElseIf defined(CPUAARCH64)}
+     sArchitectureDef = 'AARCH64';
+  {$ElseIf defined(CPUX86_64)}
+     sArchitectureDef = 'x86_64';
+  {$ElseIf defined(CPU386)}
+     sArchitectureDef = 'i386';
+  {$Else}
+     sArchitectureDef = 'Unknown';
+  {$endIf}
+
+  {$If Defined(UNIX)}
+    {$If Defined(LINUX)}
+       sTargetOsDef = 'Linux';
+    {$ElseIf defined(BSD)}
+       sTargetOsDef = 'BSD';
+    {$EndIf}
+  {$ElseIf Defined(WINDOWS)}
+    {$If Defined(MSWINDOWS)}
+       {$If Defined(WIN32)}
+         sTargetOsDef = 'Windows';
+       {$ElseIf Defined(WIN64)}
+         sTargetOsDef = 'Windows';
+       {$Else}
+         sTargetOsDef = 'Unknown';
+       {$EndIf}
+    {$EndIf}
+  {$EndIf}
+{$Else}
+       sApplicationId = 'Delphi';
+{$EndIf}
+       sApplicationId = sArchitectureDef+'-'+sTargetOsDef;
+
+
 implementation
 
 Uses
@@ -46,7 +84,7 @@ begin
   FClassID       := 0;
   FWeight        := 0;
   FBodySize      := 0;
-  FPropertyList  := TAMQPMessageProperties.Create( 'Delphi' );
+  FPropertyList  := TAMQPMessageProperties.Create( sApplicationId );
 end;
 
 destructor TAMQPHeader.Destroy;
