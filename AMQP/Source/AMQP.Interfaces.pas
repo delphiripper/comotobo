@@ -10,6 +10,7 @@ Type
 
 {$IfDef FPC}
   TConsumerMethod = Procedure( AMQPMessage: TAMQPMessage; var SendAck: Boolean ) of object;
+  TConsumerMethodPlain = Procedure( AMQPMessage: TAMQPMessage; var SendAck: Boolean );
 {$Else}
   TConsumerMethod = Reference to Procedure( AMQPMessage: TAMQPMessage; var SendAck: Boolean );
 {$EndIf}
@@ -28,8 +29,10 @@ Type
     Property Queue : TAMQPQueue        read GetQueue;
     Property State : TAMQPChannelState read GetState;
 
-    Procedure ExchangeDeclare( AExchangeName, AType: String; Arguments: TArguments; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False); overload;
-    Procedure ExchangeDeclare( AExchangeName: String; AType: TExchangeType; Arguments: TArguments; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False); overload;
+    Procedure ExchangeDeclare( AExchangeName, AType: String; Arguments: TArguments;
+              APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False; AInternal: Boolean = false); overload;
+    Procedure ExchangeDeclare( AExchangeName: String; AType: TExchangeType; Arguments: TArguments;
+              APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False; AInternal: Boolean = false); overload;
     Procedure ExchangeBind(ADestination, ASource, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean = False);
     Procedure ExchangeUnBind(ADestination, ASource, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean = False);
 
@@ -53,6 +56,10 @@ Type
     //Procedure BasicAck( ADeliveryTag: UInt64; AMultiple: Boolean = False ); Overload;
     Procedure BasicConsume( AMessageHandler: TConsumerMethod; AQueueName, AConsumerTag: String; ANoLocal: Boolean = False;
                             ANoAck: Boolean = False; AExclusive: Boolean = False; ANoWait: Boolean = False ); Overload;
+{$IfDef FPC}
+    Procedure BasicConsume( AMessageHandler: TConsumerMethodPlain; AQueueName, AConsumerTag: String; ANoLocal: Boolean = False;
+                            ANoAck: Boolean = False; AExclusive: Boolean = False; ANoWait: Boolean = False ); Overload;
+{$EndIf}
     Procedure BasicConsume( AMessageQueue: TAMQPMessageQueue; AQueueName, AConsumerTag: String; ANoLocal: Boolean = False;
                             ANoAck: Boolean = False; AExclusive: Boolean = False; ANoWait: Boolean = False ); Overload;
     Procedure BasicCancel( AConsumerTag: String; ANoWait: Boolean = False );

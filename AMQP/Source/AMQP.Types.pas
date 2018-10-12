@@ -293,6 +293,7 @@ Type
     function Add(AName: String; AValue: Cardinal): TFieldTable; overload;
     function Add(AName: String; AValue: String): TFieldTable; overload;
     function Add(AName: String; AValue: Boolean): TFieldTable; overload;
+    function Add(AName: String; AValue: Variant): TFieldTable; overload;
     Procedure Clear;
     Procedure Assign(AFieldTable: TFieldTable); Overload;
     Procedure Assign(AArguments: TArguments); Overload;
@@ -353,6 +354,24 @@ function TFieldTable.Add(AName: String; AValue: TAMQPValue): TFieldTable;
 begin
   Add(TFieldValuePair.Create(AName, AValue));
   Result := Self;
+end;
+
+function TFieldTable.Add(AName: String; AValue: Variant): TFieldTable;
+var VType: Integer;
+begin
+  VType:= tvardata(AValue).vtype;
+  case VType of
+    varempty: Result := Self;
+    varnull:  Result := Self;
+    varint64: Result := Add(AName, tvardata(AValue).vint64);
+    varinteger:  Result := Add(AName, tvardata(AValue).vinteger);
+    varword: Result := Add(AName, tvardata(AValue).vword);
+    varbyte: Result := Add(AName, tvardata(AValue).vbyte);
+    varshortint: Result := Add(AName, tvardata(AValue).vshortint);
+    varstring, varustrarg:  Result := Add(AName, VarToStr(AValue));
+    vardouble:  Result := Add(AName, tvardata(AValue).vdouble);
+    varboolean:  Result := Add(AName, tvardata(AValue).vboolean);
+  end;
 end;
 
 procedure TFieldTable.Assign(AFieldTable: TFieldTable);

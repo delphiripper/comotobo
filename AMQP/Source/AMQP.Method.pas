@@ -226,7 +226,7 @@ begin
               Add( 'passive',    TBoolean.Create( False ) );
               Add( 'durable',    TBoolean.Create( False ) );
               Add( 'autodelete', TBoolean.Create( False ) );
-              Add( 'internal', TBoolean.Create( False ) );
+              Add( 'internal',   TBoolean.Create( False ) );
               Add( 'no-wait',    TBoolean.Create( False ) );
               Add( 'arguments',  TFieldTable.Create );
             end;

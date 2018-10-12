@@ -76,10 +76,12 @@ Type
     function WriteData(const Buffer: Double): Longint; overload;
     function WriteData(const Buffer: Double; Count: Longint): Longint; overload;
     {$IfNDef ARM}
+    {$IfNDef WIN64}
     function WriteData(const Buffer: Extended): Longint; overload;
     function WriteData(const Buffer: Extended; Count: Longint): Longint; overload;
     function WriteData(const Buffer: TExtended80Rec): Longint; overload;
     function WriteData(const Buffer: TExtended80Rec; Count: Longint): Longint; overload;
+    {$EndIf}
     {$EndIf}
 
     function Write(const Buffer: TBytes; Offset, Count: Longint): Longint; overload;
@@ -291,15 +293,18 @@ end;
 
 {$ifdef fpc}
 {$ifndef ARM}
+{$IfNDef WIN64}
 function TStreamHelper.WriteData(const Buffer: Extended): Longint;
 begin
   Result := Write(Buffer, SizeOf(Buffer));
 end;
-{$endif}
-{$endif}
+{$EndIf}
+{$EndIf}
+{$EndIf}
 
 {$ifdef fpc}
 {$ifndef ARM}
+{$IfNDef WIN64}
 function TStreamHelper.WriteData(const Buffer: Extended; Count: Longint
   ): Longint;
 const
@@ -310,8 +315,9 @@ begin
   else
     Result := Write(Buffer, Count)
 end;
-{$endif}
-{$endif}
+{$EndIf}
+{$EndIf}
+{$EndIf}
 
 {$ifdef fpc}
 function TStreamHelper.WriteData(const Buffer: Int16): Longint;
@@ -425,15 +431,18 @@ end;
 
 {$IfDef fpc}
 {$IfNDef ARM}
+{$IfNDef WIN64}
 function TStreamHelper.WriteData(const Buffer: TExtended80Rec): Longint;
 begin
   Result := Write(Buffer, SizeOf(Buffer));
 end;
 {$EndIf}
 {$EndIf}
+{$EndIf}
 
 {$IfDef fpc}
 {$IfNDef ARM}
+{$IfNDef WIN64}
 function TStreamHelper.WriteData(const Buffer: TExtended80Rec; Count: Longint
   ): Longint;
 const
@@ -444,6 +453,7 @@ begin
   else
     Result := Write(Buffer, Count)
 end;
+{$EndIf}
 {$EndIf}
 {$EndIf}
 

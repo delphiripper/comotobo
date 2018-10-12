@@ -305,7 +305,9 @@ begin
   FIsOpen := True;
   FServerDisconnected := False;
   FHeartbeatTimer.Interval := FHeartbeatSecs * 1000;
+
   FHeartbeatTimer.Enabled  := True;
+
 end;
 
 constructor TAMQPConnection.Create;
@@ -340,6 +342,9 @@ begin
   FHeartbeatTimer.Enabled  := False;
   FHeartbeatTimer.Interval := 60000;
   FHeartbeatTimer.OnTimer  := HeartbeatTimer;
+  {$IfDef FPC}
+  FHeartbeatTimer.UseTimerThread:=True;
+  {$EndIf}
 end;
 
 function TAMQPConnection.DefaultMessageProperties: IAMQPMessageProperties;
