@@ -146,7 +146,7 @@ implementation
 Uses
   IdGlobal, IdStack,
 {$IfNDef FPC}
-  Forms,
+//  Forms,
 {$EndIf}
 {$IfDef WINDOWS}
   Windows,

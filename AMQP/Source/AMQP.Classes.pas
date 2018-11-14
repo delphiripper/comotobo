@@ -202,7 +202,11 @@ begin
   try
     while FQueue.Count = 0 do
     begin
+     {$IFDEF FPC}
       if FCondition.WaitForRTL(FGuard, ATimeOut) = wrTimeout then
+     {$Else}
+      if FCondition.WaitFor(FGuard, ATimeOut) = wrTimeout then
+     {$EndIf}
        raise AMQPTimeout.Create('Timeout!');
     end;
     Result := FQueue.Dequeue

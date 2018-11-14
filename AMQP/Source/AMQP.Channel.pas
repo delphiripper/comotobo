@@ -229,8 +229,9 @@ begin
   inherited;
 end;
 
-procedure TAMQPChannel.ExchangeDeclare(AExchangeName, AType: String; Arguments: TArguments;
-    APassive, ADurable, ANoWait: Boolean; AInternal: Boolean = false);
+procedure TAMQPChannel.ExchangeDeclare( AExchangeName, AType: String; Arguments: TArguments;
+              APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False;
+              AInternal: Boolean = false);
 var
   Method: TAMQPMethod;
 begin
@@ -241,7 +242,7 @@ begin
     Method.Field['passive' ].AsBoolean.Value     := APassive;
     Method.Field['durable' ].AsBoolean.Value     := ADurable;
     Method.Field['no-wait' ].AsBoolean.Value     := ANoWait;
-    Method.Field['internal'].AsBoolean.Value:= AInternal;
+    Method.Field['internal'].AsBoolean.Value     := AInternal;
     Method.Field['arguments'].AsFieldTable.Assign(Arguments);
     WriteMethod( Method );
 

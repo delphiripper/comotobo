@@ -57,7 +57,13 @@ const
     {$EndIf}
   {$EndIf}
 {$Else}
-       sApplicationId = 'Delphi';
+       sCompilDef = 'Delphi';
+       sTargetOsDef = 'Windows';
+       {$IfDef WIN64}
+       sArchitectureDef = 'x86_64';
+       {$Else}
+       sArchitectureDef = 'i386';
+       {$EndIf}
 {$EndIf}
        sApplicationId = sArchitectureDef+'-'+sTargetOsDef;
 

@@ -11,7 +11,7 @@ uses
   {$IfDef FPC}
     SysUtils, Classes, Generics.Collections, fpjson,
   {$Else}
-    System.SysUtils, System.Classes, System.Generics.Collections, MT.RTTI,
+    System.SysUtils, System.Classes, System.Generics.Collections, RTTI, MT.RTTI,
   {$EndIf}
   TypInfo,
   MT.Serializer,
@@ -228,11 +228,11 @@ type
   TMTHeaderSerializer = class(TMTCustomPropSerializer)
   public
     procedure PropertyToJsonValue(const ASerializer: TMTSerializer; const AJsonData: TJSONData;
-      const AName: String; const AObject: TObject; const APropInfo: PPropInfo);
+      const AName: String; const AObject: TObject; const {$IfDef FPC}APropInfo: PPropInfo{$Else}AValue: TValue{$EndIf});
       override;
     procedure JsonValueToProperty(const ASerializer: TMTSerializer;
       const AJsonData: TJSONData; const AName: String; const AObject: TObject;
-      const APropInfo: PPropInfo); override;
+      {$IfDef FPC}const APropInfo: PPropInfo{$Else}var AValue: TValue{$EndIf}); override;
   end;
 
   { TMTMessageTypeSerializer }
@@ -240,11 +240,11 @@ type
   TMTMessageTypeSerializer = class(TMTCustomPropSerializer)
   public
     procedure PropertyToJsonValue(const ASerializer: TMTSerializer; const AJsonData: TJsonData;
-      const AName: String; const AObject: TObject; const APropInfo: PPropInfo);
+      const AName: String; const AObject: TObject;  const {$IfDef FPC}APropInfo: PPropInfo{$Else}AValue: TValue{$EndIf});
       override;
     procedure JsonValueToProperty(const ASerializer: TMTSerializer;
   const AJsonData: TJSONData; const AName: String; const AObject: TObject;
-  const APropInfo: PPropInfo); override;
+  {$IfDef FPC}const APropInfo: PPropInfo{$Else}var AValue: TValue{$EndIf}); override;
   end;
 
 
@@ -267,7 +267,7 @@ uses
      , Windows
   {$EndIf}
   {$Else}
-      System.Variants, System.Rtti, WinApi.Windows
+      System.Variants, WinApi.Windows
    {$EndIf}
      ;
 
@@ -275,13 +275,18 @@ uses
 
 procedure TMTMessageTypeSerializer.JsonValueToProperty(
   const ASerializer: TMTSerializer; const AJsonData: TJSONData;
-  const AName: String; const AObject: TObject; const APropInfo: PPropInfo);
+  const AName: String; const AObject: TObject;
+  {$IfDef FPC}const APropInfo: PPropInfo{$Else}var AValue: TValue{$EndIf});
 var MessageTypes: IMTMessageType;
     Enum: {$IFDEF FPC}TJSONEnum{$ELSE}TJsonData{$EndIf};
 begin
   if assigned(AJsonData) and (AJsonData is TJSONArray) then
   begin
+   {$IfDef FPC}
     MessageTypes := GetInterfaceProp(AObject, APropInfo) as IMTMessageType;
+   {$Else}
+    MessageTypes := AValue.AsInterface as IMTMessageType;
+   {$EndIf}
     for enum in (AJsonData as TJSONArray) do
      {$IFDEF FPC}
       MessageTypes.Add(Enum.Value.AsString);
@@ -293,12 +298,16 @@ end;
 
 procedure TMTMessageTypeSerializer.PropertyToJsonValue(const ASerializer: TMTSerializer;
   const AJsonData: TJsonData; const AName: String; const AObject: TObject;
-  const APropInfo: PPropInfo);
+  const {$IfDef FPC}APropInfo: PPropInfo{$Else}AValue: TValue{$EndIf});
 var MessageTypes: IMTMessageType;
     S: String;
     Arr: TJSONArray;
 begin
+ {$IfDef FPC}
   MessageTypes := GetInterfaceProp(AObject, APropInfo) as IMTMessageType;
+ {$Else}
+  MessageTypes := AValue.AsInterface as IMTMessageType;
+ {$EndIf}
   Arr := TJSONArray.Create;
   for s In MessageTypes do
      Arr.Add(S);
@@ -309,13 +318,18 @@ end;
 
 procedure TMTHeaderSerializer.JsonValueToProperty(
   const ASerializer: TMTSerializer; const AJsonData: TJSONData;
-  const AName: String; const AObject: TObject; const APropInfo: PPropInfo);
+  const AName: String; const AObject: TObject;
+  {$IfDef FPC}const APropInfo: PPropInfo{$Else}var AValue: TValue{$EndIf});
 var Headers: IMTHeaders;
     Enum: TJSONEnum;
 begin
   if assigned(AJsonData) and (AJsonData is TJSONObject) then
   begin
+   {$IfDef FPC}
     Headers := GetInterfaceProp(AObject, APropInfo) as IMTHeaders;
+   {$Else}
+     Headers := AValue.AsInterface as IMTHeaders;
+   {$EndIf}
     for enum in (AJsonData as TJSONObject) do
     {$IFDEF FPC}
       Headers.Add(Enum.Key, Enum.Value.Value);
@@ -327,14 +341,18 @@ end;
 
 procedure TMTHeaderSerializer.PropertyToJsonValue(const ASerializer: TMTSerializer;
   const AJsonData: TJsonData; const AName: String; const AObject: TObject;
-  const APropInfo: PPropInfo);
+  const {$IfDef FPC}APropInfo: PPropInfo{$Else}AValue: TValue{$EndIf});
 var Headers: IMTHeaders;
     HeadersEnum: IMTEnumerator<IMTHeader>;
     Header: IMTHeader;
     JObj: TJSONObject;
     k: Integer;
 begin
+{$IfDef FPC}
   Headers := GetInterfaceProp(AObject, APropInfo) as IMTHeaders;
+{$Else}
+  Headers := AValue.AsInterface as IMTHeaders;
+{$EndIf}
   JObj := TJSONObject.Create;
   HeadersEnum := Headers as IMTEnumerator<IMTHeader>;
   for Header in HeadersEnum do
@@ -352,6 +370,9 @@ begin
        varstring, varustrarg: JObj.Add(Header.Key, CreateJSON(VarToStr(Header.Value)));
        vardouble: JObj.Add(Header.Key, CreateJSON(tvardata(Header.Value).vdouble));
        varboolean: JObj.Add(Header.Key, CreateJSON(tvardata(Header.Value).vboolean));
+{$IfNDef FPC}
+       varUString: JObj.Add(Header.Key, CreateJSON(VarToStr(Header.Value)));
+{$EndIf}
       end;
     end;
   ASerializer.AddObject(AJsonData, AName, JObj);
