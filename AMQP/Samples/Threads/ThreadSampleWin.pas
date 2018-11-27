@@ -67,7 +67,7 @@ var
 implementation
 
 Uses
-  AMQP.Message, AMQP.StreamHelper;
+  AMQP.Message, AMQP.StreamHelper, AMQP.Arguments;
 
 {$R *.dfm}
 
@@ -123,17 +123,19 @@ begin
   Consumer1 := nil;
   Consumer2 := nil;
   AMQP := TAMQPConnection.Create;
-  AMQP.HeartbeatSecs := 120;
-  AMQP.Host          := 'localhost';
+  AMQP.HeartbeatSecs := 60;
+  AMQP.Host          := '192.168.1.225';//'172.17.251.111';
   AMQP.Port          := 5672;
-  AMQP.VirtualHost   := '/';
-  AMQP.Username      := 'TestUser';
-  AMQP.Password      := 'password';
+  AMQP.VirtualHost   := '/';//'vtc';
+  AMQP.Username      := 'admin';//'vtc_test';
+  AMQP.Password      := 'admin';//'vtc_test';
+  AMQP.Timeout := INFINITE;
   AMQP.Connect;
   Channel := AMQP.OpenChannel;
-  Channel.ExchangeDeclare( 'Work', 'direct' );
-  Channel.QueueDeclare( 'WorkQueue' );
-  Channel.QueueBind( 'WorkQueue', 'Work', 'work.unit' );
+  Channel.ExchangeDeclare( 'Work', 'direct', [] );
+  Channel.QueueDeclare( 'WorkQueue' , []);
+  Channel.QueueBind( 'WorkQueue', 'Work', 'work.unit' , []);
+
 end;
 
 { TConsumerThread }
@@ -153,11 +155,11 @@ begin
   WriteLine( 'Thread starting' );
   NameThreadForDebugging( 'ConsumerThread' );
   Queue    := TAMQPMessageQueue.Create;
-  FChannel := FAMQP.OpenChannel;
+  FChannel := FAMQP.OpenChannel(0, 10);
   Try
     FChannel.BasicConsume( Queue, 'WorkQueue', 'consumer' );
     Repeat
-      Msg := Queue.Get;
+      Msg := Queue.Get(INFINITE);
       if Msg = nil then
         Terminate;
       if not Terminated then
@@ -165,6 +167,7 @@ begin
         WriteLine( 'Consumed: ' + Msg.Body.AsString[ TEncoding.ASCII ] );
         Msg.Ack;
         Msg.Free;
+        //Sleep(Random(50));
       End;
     Until Terminated;
   Finally

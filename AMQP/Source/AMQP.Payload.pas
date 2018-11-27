@@ -1,9 +1,9 @@
+{$I AMQP.Options.inc}
 unit AMQP.Payload;
-
 interface
 
 Uses
-  System.Classes;
+  Classes;
 
 Type
   TAMQPPayload = Class

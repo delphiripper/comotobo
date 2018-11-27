@@ -3,7 +3,7 @@ unit EasyDelphiQ.Classes;
 interface
 
 Uses
-  System.SysUtils, AMQP.Interfaces, EasyDelphiQ.Interfaces;
+  System.SysUtils, AMQP.Interfaces, EasyDelphiQ.Interfaces, AMQP.Arguments;
 
 Type
   EEasyDelphiQConnectionFailed = Class(Exception);
@@ -16,15 +16,17 @@ Type
     FSubscriberID: String;
     FExchange: String;
     FClassName: String;
+    FArguments: TArguments;
   Public
     Function Name: String;
     Function Topic: String;
     Function SubscriberID: String;
     Function Exchange: String;
     Function ClassName: String;
+    Function Arguments: TArguments;
     Procedure Reconnect( Channel: IAMQPChannel );
     Constructor Create( AChannel: IAMQPChannel; AName: String; ATopic: String; ASubscriberID: String; AExchange: String;
-                        AClassName: String );
+                        AClassName: String; AArguments: TArguments );
   End;
 
   TExchange = class(TInterfacedObject, IExchange)
@@ -53,12 +55,17 @@ implementation
 
 { TQueue }
 
+function TQueue.Arguments: TArguments;
+begin
+ Result := FArguments;
+end;
+
 function TQueue.ClassName: String;
 begin
   Result := FClassName;
 end;
 
-constructor TQueue.Create(AChannel: IAMQPChannel; AName, ATopic, ASubscriberID, AExchange, AClassName: String);
+constructor TQueue.Create(AChannel: IAMQPChannel; AName, ATopic, ASubscriberID, AExchange, AClassName: String; AArguments: TArguments);
 begin
   FChannel      := AChannel;
   FName         := AName;
@@ -66,6 +73,7 @@ begin
   FSubscriberID := ASubscriberID;
   FExchange     := AExchange;
   FClassName    := AClassName;
+  FArguments := AArguments;
 end;
 
 function TQueue.Exchange: String;

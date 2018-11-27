@@ -1,27 +1,46 @@
+{$I AMQP.Options.inc}
 unit AMQP.Channel;
-
 interface
 
 Uses
+  {$ifdef fpc}
+  SysUtils, Classes, Generics.Collections,
+  {$else}
   System.SysUtils, System.Classes, System.Generics.Collections,
+  {$endif}
   AMQP.Method, AMQP.Frame, AMQP.Message, AMQP.Protocol, AMQP.Interfaces, AMQP.Classes, AMQP.IMessageProperties, AMQP.Arguments;
 
 Type
+
+  { TConsumer }
+
   TConsumer = Class
   Strict Private
     FQueueName      : String;
     FConsumerTag    : String;
     FMessageHandler : TConsumerMethod;
     FMessageQueue   : TAMQPMessageQueue;
+    {$IfDef FPC}
+    FMessageHandlerPlain: TConsumerMethodPlain;
+    {$EndIf}
   Public
     Property QueueName      : String            read FQueueName;
     Property ConsumerTag    : String            read FConsumerTag;
     Property MessageHandler : TConsumerMethod   read FMessageHandler;
     Property MessageQueue   : TAMQPMessageQueue read FMessageQueue;
+  {$IfDef FPC}
+    property MessageHandlerPlain: TConsumerMethodPlain read FMessageHandlerPlain;
+  {$EndIf}
     Procedure Receive( AMessage: TAMQPMessage );
-    Constructor Create( AQueueName, AConsumerTag: String; AMessageHandler: TConsumerMethod; AMessageQueue: TAMQPMessageQueue );
+    Constructor Create( AQueueName, AConsumerTag: String; AMessageHandler: TConsumerMethod); overload;
+    Constructor Create( AQueueName, AConsumerTag: String; AMessageQueue: TAMQPMessageQueue ); overload;
+   {$IfDef FPC}
+    Constructor Create( AQueueName, AConsumerTag: String; AMessageHandler: TConsumerMethodPlain ); overload;
+   {$EndIf}
     Destructor Destroy; Override;
   End;
+
+  { TAMQPChannel }
 
   TAMQPChannel = class(TInterfacedObject, IAMQPBaseChannel, IAMQPChannel)
   Strict private
@@ -32,7 +51,11 @@ Type
     FConsumers       : TObjectList<TConsumer>;
     FDeliverConsumer : TConsumer;
     FDeliverQueue    : TObjectList<TAMQPFrame>;
-    procedure AddConsumer( AQueueName, AConsumerTag: String; AMessageHandler: TConsumerMethod; AMessageQueue: TAMQPMessageQueue );
+    procedure AddConsumer( AQueueName, AConsumerTag: String; AMessageHandler: TConsumerMethod); overload;
+    {$IfDef FPC}
+    procedure AddConsumer( AQueueName, AConsumerTag: String; AMessageHandler: TConsumerMethodPlain); overload;
+    {$EndIf}
+    procedure AddConsumer( AQueueName, AConsumerTag: String; AMessageQueue: TAMQPMessageQueue); overload;
     procedure RemoveConsumer( AConsumerTag: String );
     Function FindConsumer( AConsumerTag: String ): TConsumer;
     procedure WriteMethod( AMethod: TAMQPMethod );
@@ -52,25 +75,36 @@ Type
     Function GetState     : TAMQPChannelState;
     Function GetConsumers : TObjectList<TConsumer>;
 
-    Procedure ExchangeDeclare( AExchangeName, AType: String; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False ); overload;
-    Procedure ExchangeDeclare( AExchangeName: String; AType: TExchangeType; APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False ); overload;
+    Procedure ExchangeDeclare( AExchangeName, AType: String; Arguments: TArguments;
+              APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False; AInternal: Boolean = false); overload;
+    Procedure ExchangeDeclare( AExchangeName: String; AType: TExchangeType; Arguments: TArguments;
+              APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False; AInternal: Boolean = false); overload;
     Procedure ExchangeDelete( AExchangeName: String; AIfUnused: Boolean = True; ANoWait: Boolean = False );
-    Procedure QueueDeclare( AQueueName: String; APassive: Boolean = False; ADurable: Boolean = True; AExclusive: Boolean = False;
-                            AAutoDelete: Boolean = False; ANoWait: Boolean = False; Arguments: TArguments = [] );
-    Procedure QueueBind( AQueueName, AExchangeName, ARoutingKey: String; ANoWait: Boolean = False );
+    Procedure ExchangeBind(ADestination, ASource, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean = False);
+    Procedure ExchangeUnBind(ADestination, ASource, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean = False);
+
+    Procedure QueueDeclare( AQueueName: String; Arguments: TArguments; APassive: Boolean = False; ADurable: Boolean = True; AExclusive: Boolean = False;
+                            AAutoDelete: Boolean = False; ANoWait: Boolean = False);
+    Procedure QueueBind( AQueueName, AExchangeName, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean = False);
     Procedure QueuePurge( AQueueName: String; ANoWait: Boolean = False );
     Procedure QueueDelete( AQueueName: String; AIfUnused: Boolean = True; AIfEmpty: Boolean = True; ANoWait: Boolean = False );
-    Procedure QueueUnBind( AQueueName, AExchangeName, ARoutingKey: String );
+    Procedure QueueUnBind( AQueueName, AExchangeName, ARoutingKey: String; Arguments: TArguments);
+
+    Procedure BasicQOS(APrefetchSize: Cardinal; APrefetchCount: Word; AGlobal: Boolean = False);
 
     Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream ); Overload;
     Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean ); Overload;
     Procedure BasicPublish( AExchange, ARoutingKey: String; AData: TStream; AMandatory: Boolean; AMessageProperties: IAMQPMessageProperties ); Overload;
-    Procedure BasicPublish( AExchange, ARoutingKey: String; Const AData: String; AMandatory: Boolean = False ); Overload;
+    Procedure BasicPublish( AExchange, ARoutingKey: String; Const AData: String; AMandatory: Boolean = False; AMessageProperties: IAMQPMessageProperties = nil ); Overload;
     Function  BasicGet( AQueueName: String; ANoAck: Boolean = False ): TAMQPMessage;
     Procedure BasicAck( AMessage: TAMQPMessage; AMultiple: Boolean = False ); Overload;
     Procedure BasicAck( ADeliveryTag: UInt64; AMultiple: Boolean = False ); Overload;
     Procedure BasicConsume( AMessageHandler: TConsumerMethod; AQueueName, AConsumerTag: String; ANoLocal: Boolean = False;
                             ANoAck: Boolean = False; AExclusive: Boolean = False; ANoWait: Boolean = False ); Overload;
+    {$IfDef FPC}
+    Procedure BasicConsume( AMessageHandler: TConsumerMethodPlain; AQueueName, AConsumerTag: String; ANoLocal: Boolean = False;
+                            ANoAck: Boolean = False; AExclusive: Boolean = False; ANoWait: Boolean = False ); Overload;
+    {$EndIf}
     Procedure BasicConsume( AMessageQueue: TAMQPMessageQueue; AQueueName, AConsumerTag: String; ANoLocal: Boolean = False;
                             ANoAck: Boolean = False; AExclusive: Boolean = False; ANoWait: Boolean = False ); Overload;
     Procedure BasicCancel( AConsumerTag: String; ANoWait: Boolean = False );
@@ -153,7 +187,18 @@ begin
   FDeliverQueue    := TObjectList<TAMQPFrame>.Create;
 end;
 
-Function TAMQPChannel.FindConsumer( AConsumerTag: String ): TConsumer;
+procedure TAMQPChannel.AddConsumer(AQueueName, AConsumerTag: String;
+  AMessageQueue: TAMQPMessageQueue);
+var
+  Consumer: TConsumer;
+begin
+  for Consumer in FConsumers do
+    if (Consumer.ConsumerTag = AConsumerTag) then
+      raise AMQPException.Create('Duplicate consumer');
+  FConsumers.Add( TConsumer.Create( AQueueName, AConsumerTag, AMessageQueue) );
+end;
+
+function TAMQPChannel.FindConsumer(AConsumerTag: String): TConsumer;
 var
   Consumer: TConsumer;
 Begin
@@ -184,7 +229,9 @@ begin
   inherited;
 end;
 
-procedure TAMQPChannel.ExchangeDeclare(AExchangeName, AType: String; APassive, ADurable, ANoWait: Boolean);
+procedure TAMQPChannel.ExchangeDeclare( AExchangeName, AType: String; Arguments: TArguments;
+              APassive: Boolean = False; ADurable: Boolean = True; ANoWait: Boolean = False;
+              AInternal: Boolean = false);
 var
   Method: TAMQPMethod;
 begin
@@ -195,6 +242,8 @@ begin
     Method.Field['passive' ].AsBoolean.Value     := APassive;
     Method.Field['durable' ].AsBoolean.Value     := ADurable;
     Method.Field['no-wait' ].AsBoolean.Value     := ANoWait;
+    Method.Field['internal'].AsBoolean.Value     := AInternal;
+    Method.Field['arguments'].AsFieldTable.Assign(Arguments);
     WriteMethod( Method );
 
     if not ANoWait then
@@ -204,12 +253,33 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.ExchangeDeclare(AExchangeName: String; AType: TExchangeType; APassive, ADurable, ANoWait: Boolean);
+procedure TAMQPChannel.ExchangeBind(ADestination, ASource, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean);
+var
+  Method: TAMQPMethod;
 begin
-  ExchangeDeclare( AExchangeName, ExchangeTypeStr[AType], APassive, ADurable, ANoWait );
+  Method := TAMQPMethod.CreateMethod( AMQP_EXCHANGE_BIND );
+  Try
+    Method.Field['destination' ].AsShortString.Value  := ADestination;
+    Method.Field['source'      ].AsShortString.Value  := ASource;
+    Method.Field['routing-key' ].AsShortString.Value  := ARoutingKey;
+    Method.Field['no-wait'     ].AsBoolean.Value      := ANoWait;
+    Method.Field['arguments'   ].AsFieldTable.Assign(Arguments);
+    WriteMethod( Method );
+    if not ANoWait then
+      ReadMethod( AMQP_EXCHANGE_BIND_OK );
+  Finally
+    Method.Free;
+  End;
 end;
 
-procedure TAMQPChannel.ExchangeDelete(AExchangeName: String; AIfUnused, ANoWait: Boolean);
+procedure TAMQPChannel.ExchangeDeclare(AExchangeName: String; AType: TExchangeType;
+          Arguments: TArguments; APassive, ADurable, ANoWait, AInternal: Boolean);
+begin
+  ExchangeDeclare( AExchangeName, ExchangeTypeStr[AType], Arguments, APassive, ADurable, ANoWait, AInternal);
+end;
+
+procedure TAMQPChannel.ExchangeDelete(AExchangeName: String;
+  AIfUnused: Boolean; ANoWait: Boolean);
 var
   Method: TAMQPMethod;
 begin
@@ -222,6 +292,25 @@ begin
 
     if not ANoWait then
       ReadMethod( AMQP_EXCHANGE_DELETE_OK );
+  Finally
+    Method.Free;
+  End;
+end;
+
+procedure TAMQPChannel.ExchangeUnBind(ADestination, ASource, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean);
+var
+  Method: TAMQPMethod;
+begin
+  Method := TAMQPMethod.CreateMethod( AMQP_EXCHANGE_UNBIND );
+  Try
+    Method.Field['destination' ].AsShortString.Value  := ADestination;
+    Method.Field['source'      ].AsShortString.Value  := ASource;
+    Method.Field['routing-key' ].AsShortString.Value  := ARoutingKey;
+    Method.Field['no-wait'     ].AsBoolean.Value      := ANoWait;
+    Method.Field['arguments'   ].AsFieldTable.Assign(Arguments);
+    WriteMethod( Method );
+    if not ANoWait then
+      ReadMethod( AMQP_EXCHANGE_UNBIND_OK );
   Finally
     Method.Free;
   End;
@@ -251,7 +340,7 @@ begin
   Try
     Repeat
       BodyFrame := FDeliverQueue.Extract( FDeliverQueue[0] );
-      Stream.CopyFrom( BodyFrame.Payload.AsBody.Stream, -1 );
+      Stream.CopyFrom( BodyFrame.Payload.AsBody.Stream, 0);
       BodyFrame := nil;
     Until Stream.Size >= HeaderFrame.Payload.AsHeader.BodySize;
     Result := TAMQPMessage.Create;
@@ -270,15 +359,29 @@ begin
   BasicAck( AMessage.DeliveryTag, AMultiple );
 end;
 
-procedure TAMQPChannel.AddConsumer( AQueueName, AConsumerTag: String; AMessageHandler: TConsumerMethod; AMessageQueue: TAMQPMessageQueue);
+procedure TAMQPChannel.AddConsumer( AQueueName, AConsumerTag: String; AMessageHandler: TConsumerMethod);
 var
   Consumer: TConsumer;
 begin
   for Consumer in FConsumers do
     if (Consumer.ConsumerTag = AConsumerTag) then
       raise AMQPException.Create('Duplicate consumer');
-  FConsumers.Add( TConsumer.Create( AQueueName, AConsumerTag, AMessageHandler, AMessageQueue ) );
+  FConsumers.Add( TConsumer.Create( AQueueName, AConsumerTag, AMessageHandler) );
 end;
+
+{$IfDef FPC}
+procedure TAMQPChannel.AddConsumer( AQueueName, AConsumerTag: String; AMessageHandler: TConsumerMethodPlain);
+var
+  Consumer: TConsumer;
+begin
+  for Consumer in FConsumers do
+    if (Consumer.ConsumerTag = AConsumerTag) then
+      raise AMQPException.Create('Duplicate consumer');
+  FConsumers.Add( TConsumer.Create( AQueueName, AConsumerTag, AMessageHandler) );
+end;
+
+{$EndIf}
+
 
 procedure TAMQPChannel.BasicAck(ADeliveryTag: UInt64; AMultiple: Boolean);
 var
@@ -316,7 +419,7 @@ procedure TAMQPChannel.BasicConsume(AMessageQueue: TAMQPMessageQueue; AQueueName
 var
   Method: TAMQPMethod;
 begin
-  AddConsumer( AQueueName, AConsumerTag, nil, AMessageQueue );
+  AddConsumer( AQueueName, AConsumerTag, AMessageQueue );
   Method := TAMQPMethod.CreateMethod( AMQP_BASIC_CONSUME );
   Try
     Method.Field['queue'].AsShortString.Value        := AQueueName;
@@ -333,12 +436,13 @@ begin
   End;
 end;
 
+
 procedure TAMQPChannel.BasicConsume( AMessageHandler: TConsumerMethod; AQueueName, AConsumerTag: String;
                                      ANoLocal, ANoAck, AExclusive, ANoWait: Boolean);
 var
   Method: TAMQPMethod;
 begin
-  AddConsumer( AQueueName, AConsumerTag, AMessageHandler, nil );
+  AddConsumer( AQueueName, AConsumerTag, AMessageHandler);
   Method := TAMQPMethod.CreateMethod( AMQP_BASIC_CONSUME );
   Try
     Method.Field['queue'].AsShortString.Value        := AQueueName;
@@ -354,6 +458,35 @@ begin
     Method.Free;
   End;
 end;
+
+{$IfDef FPC}
+procedure TAMQPChannel.BasicConsume(AMessageHandler: TConsumerMethodPlain;
+  AQueueName, AConsumerTag: String; ANoLocal: Boolean; ANoAck: Boolean;
+  AExclusive: Boolean; ANoWait: Boolean);
+var
+  Method: TAMQPMethod;
+  Answer: IAMQPFrame;
+begin
+  Method := TAMQPMethod.CreateMethod( AMQP_BASIC_CONSUME );
+  Try
+    Method.Field['queue'].AsShortString.Value        := AQueueName;
+    Method.Field['consumer-tag'].AsShortString.Value := AConsumerTag;
+    Method.Field['no-ack'].AsBoolean.Value           := ANoAck;
+    Method.Field['no-local'].AsBoolean.Value         := ANoLocal;
+    Method.Field['exclusive'].AsBoolean.Value        := AExclusive;
+    Method.Field['no-wait'].AsBoolean.Value          := ANoWait;
+    WriteMethod(  Method );
+    if not ANoWait then
+      Answer := ReadMethod( AMQP_BASIC_CONSUME_OK );
+    if AConsumerTag = '' then
+      AConsumerTag := Answer.Payload.AsMethod.Field['consumer-tag'].AsShortString.Value;
+    AddConsumer( AQueueName, AConsumerTag, AMessageHandler);
+  Finally
+    Method.Free;
+  End;
+
+end;
+{$EndIf}
 
 function TAMQPChannel.BasicGet(AQueueName: String; ANoAck: Boolean): TAMQPMessage;
 var
@@ -374,12 +507,12 @@ begin
       Result := nil
     else //if GetOkFrame.Payload.AsMethod.IsMethod( AMQP_BASIC_GET_OK ) then
     Begin
-      HeaderFrame := FQueue.Get;
+      HeaderFrame := FQueue.Get(FConnection.Timeout);
       if HeaderFrame.Kind <> fkHeader then
         raise AMQPException.Create('Expected header frame');
       Repeat
-        BodyFrame := FQueue.Get;
-        Stream.CopyFrom( BodyFrame.Payload.AsBody.Stream, -1 );
+        BodyFrame := FQueue.Get(FConnection.Timeout);
+        Stream.CopyFrom( BodyFrame.Payload.AsBody.Stream, 0);
       Until Stream.Size >= HeaderFrame.Payload.AsHeader.BodySize;
       Result := TAMQPMessage.Create;
       Self.GetInterface( IAMQPBaseChannel, BaseChannel );
@@ -400,18 +533,38 @@ begin
   BasicPublish( AExchange, ARoutingKey, AData, False );
 end;
 
-procedure TAMQPChannel.BasicPublish(AExchange, ARoutingKey: String; const AData: String; AMandatory: Boolean = False);
+procedure TAMQPChannel.BasicPublish(AExchange, ARoutingKey: String; const AData: String; AMandatory: Boolean = False; AMessageProperties: IAMQPMessageProperties = nil );
 var
   StringStream: TStringStream;
   MessageProperties: IAMQPMessageProperties;
 begin
-  MessageProperties := FConnection.DefaultMessageProperties;
+  if AMessageProperties = nil then
+  begin
+    MessageProperties := FConnection.DefaultMessageProperties;
+    MessageProperties.&Type.Value := 'String';
+  end else
+   MessageProperties := AMessageProperties;
   StringStream := TStringStream.Create( AData, TEncoding.UTF8 );
   Try
-    MessageProperties.&Type.Value := 'String';
     BasicPublish( AExchange, ARoutingKey, StringStream, AMandatory, MessageProperties );
   Finally
     StringStream.Free;
+  End;
+end;
+
+procedure TAMQPChannel.BasicQOS(APrefetchSize: Cardinal; APrefetchCount: Word; AGlobal: Boolean);
+var
+  Method: TAMQPMethod;
+begin
+  Method := TAMQPMethod.CreateMethod( AMQP_BASIC_QOS );
+  Try
+    Method.Field['prefetch-size'].AsLongUInt.Value    := APrefetchSize;
+    Method.Field['prefetch-count'].AsShortUInt.Value := APrefetchCount;
+    Method.Field['global'].AsBoolean.Value       := AGlobal;
+    WriteMethod(  Method );
+    ReadMethod( [ AMQP_BASIC_QOS_OK ] );
+  Finally
+    Method.Free;
   End;
 end;
 
@@ -498,7 +651,7 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.QueueBind(AQueueName, AExchangeName, ARoutingKey: String; ANoWait: Boolean);
+procedure TAMQPChannel.QueueBind(AQueueName, AExchangeName, ARoutingKey: String; Arguments: TArguments; ANoWait: Boolean);
 var
   Method: TAMQPMethod;
 begin
@@ -508,6 +661,7 @@ begin
     Method.Field['exchange'].AsShortString.Value    := AExchangeName;
     Method.Field['routing-key'].AsShortString.Value := ARoutingKey;
     Method.Field['no-wait' ].AsBoolean.Value        := ANoWait;
+    Method.Field['arguments'].AsFieldTable.Assign(Arguments);
     WriteMethod( Method );
 
     if not ANoWait then
@@ -517,7 +671,9 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.QueueDeclare(AQueueName: String; APassive, ADurable, AExclusive, AAutoDelete, ANoWait: Boolean; Arguments: TArguments);
+procedure TAMQPChannel.QueueDeclare(AQueueName: String; Arguments: TArguments;
+  APassive: Boolean; ADurable: Boolean; AExclusive: Boolean;
+  AAutoDelete: Boolean; ANoWait: Boolean);
 var
   Method: TAMQPMethod;
 begin
@@ -539,7 +695,8 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.QueueDelete(AQueueName: String; AIfUnused, AIfEmpty, ANoWait: Boolean);
+procedure TAMQPChannel.QueueDelete(AQueueName: String; AIfUnused: Boolean;
+  AIfEmpty: Boolean; ANoWait: Boolean);
 var
   Method: TAMQPMethod;
 begin
@@ -575,7 +732,7 @@ begin
   End;
 end;
 
-procedure TAMQPChannel.QueueUnBind(AQueueName, AExchangeName, ARoutingKey: String);
+procedure TAMQPChannel.QueueUnBind(AQueueName, AExchangeName, ARoutingKey: String; Arguments: TArguments);
 var
   Method: TAMQPMethod;
 begin
@@ -584,6 +741,7 @@ begin
     Method.Field['queue'].AsShortString.Value       := AQueueName;
     Method.Field['exchange'].AsShortString.Value    := AExchangeName;
     Method.Field['routing-key'].AsShortString.Value := ARoutingKey;
+    Method.Field['arguments'].AsFieldTable.Assign(Arguments);
     WriteMethod( Method );
     ReadMethod( AMQP_QUEUE_UNBIND_OK );
   Finally
@@ -598,7 +756,7 @@ var
 begin
   CheckOpen;
   Repeat
-    Result := FQueue.Get;
+    Result := FQueue.Get(FConnection.Timeout);
   Until (Result = nil) or (Result.Kind <> fkHeartbeat);
 
   if (Result = nil) then
@@ -687,13 +845,41 @@ end;
 
 { TConsumer }
 
-constructor TConsumer.Create(AQueueName, AConsumerTag: String; AMessageHandler: TConsumerMethod; AMessageQueue: TAMQPMessageQueue);
+constructor TConsumer.Create(AQueueName, AConsumerTag: String;
+  AMessageQueue: TAMQPMessageQueue);
+begin
+  FQueueName      := AQueueName;
+  FConsumerTag    := AConsumerTag;
+  FMessageHandler := nil;
+{$IfDef FPC}
+  FMessageHandlerPlain:= nil;
+{$EndIf}
+  FMessageQueue   := AMessageQueue;
+end;
+
+constructor TConsumer.Create(AQueueName, AConsumerTag: String;
+  AMessageHandler: TConsumerMethod);
 begin
   FQueueName      := AQueueName;
   FConsumerTag    := AConsumerTag;
   FMessageHandler := AMessageHandler;
-  FMessageQueue   := AMessageQueue;
+  {$IfDef FPC}
+    FMessageHandlerPlain:= nil;
+  {$EndIf}
+  FMessageQueue   := nil;
 end;
+
+{$IfDef FPC}
+constructor TConsumer.Create(AQueueName, AConsumerTag: String;
+  AMessageHandler: TConsumerMethodPlain);
+begin
+  FQueueName      := AQueueName;
+  FConsumerTag    := AConsumerTag;
+  FMessageHandlerPlain := AMessageHandler;
+  FMessageHandler := nil;
+  FMessageQueue   := nil;
+end;
+{$EndIf}
 
 destructor TConsumer.Destroy;
 begin
@@ -712,6 +898,11 @@ begin
   Begin
     SendAck := True;
     Try
+{$IfDef FPC}
+      if Assigned(MessageHandlerPlain) then
+       MessageHandlerPlain(AMessage, SendAck)
+      else
+{$EndIf}
       MessageHandler( AMessage, SendAck );
       if SendAck then
         AMessage.Ack;

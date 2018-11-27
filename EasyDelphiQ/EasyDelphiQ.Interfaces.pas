@@ -3,7 +3,7 @@ unit EasyDelphiQ.Interfaces;
 interface
 
 Uses
-  AMQP.Interfaces;
+  AMQP.Interfaces, AMQP.Arguments;
 
 Type
   IQueue = Interface ['{B6686F6E-3772-47C8-A30C-6FC26AB12084}']
@@ -12,6 +12,7 @@ Type
     Function SubscriberID: String;
     Function Exchange: String;
     Function ClassName: String;
+    function Arguments: TArguments;
     Procedure Reconnect( Channel: IAMQPChannel );
   End;
 
