@@ -49,6 +49,8 @@ Type
                         ADumpMethod: TDumpMethod; ADumpHeader: TDumpHeader; ADumpFrame: TDumpFrame );
   End;
 
+  { TAMQPConnection }
+
   TAMQPConnection = Class(TSingletonImplementation, IAMQPConnection)
   Strict Private
     FTCP              : TIdTcpClient;
@@ -106,9 +108,14 @@ Type
     procedure DumpHeader( ASendRecv: TSendRecv; AHeader: TAMQPHeader );
     procedure DumpFrame(  ASendRecv: TSendRecv; AStream: TStream );
   private
+    function GetConnectUrl: String;
+    procedure SetConnectUrl(AValue: String);
     procedure SetMaxFrameSize(const Value: Cardinal);
     procedure SetTimeout(const Value: LongWord);
   Public
+    // Emergency stop
+    procedure AbortConnection;
+    Property ConnectURL       : String      read GetConnectUrl  write SetConnectUrl;
     Property Username         : String      read FUsername      write FUsername;
     Property Password         : String      read FPassword      write FPassword;
     Property VirtualHost      : String      read FVirtualHost   write FVirtualHost;
@@ -145,21 +152,19 @@ implementation
 
 Uses
   IdGlobal, IdStack,
-{$IfNDef FPC}
-//  Forms,
-{$EndIf}
 {$IfDef WINDOWS}
   Windows,
-{$EndIf}
-{$IfDef UNIX}
+{$Else}
   Unix,
 {$EndIf}
+  URIParser,
   AMQP.MessageProperties,
   AMQP.Payload,
   AMQP.Helper,
   AMQP.StreamHelper,
   AMQP.Types,
   AMQP.Channel;
+
 
 function GetLocalComputerName : string;
 {$IfDef WINDOWS}
@@ -182,7 +187,8 @@ end;
 
 { TAMQPConnection }
 
-Function TAMQPConnection.ChannelNeedsToBeClosedOnServer(AChannel: IAMQPChannel): Boolean;
+function TAMQPConnection.ChannelNeedsToBeClosedOnServer(AChannel: IAMQPChannel
+  ): Boolean;
 var
   Channels: TList<IAMQPChannel>;
 Begin
@@ -214,7 +220,7 @@ begin
     Method := TAMQPMethod.CreateMethod( AMQP_CHANNEL_CLOSE );
     Try
       WriteMethod( AChannel.ID, Method );
-      Frame := AChannel.Queue.Get(FTimeout);
+      Frame := AChannel.Queue.Get(INFINITE);
       Try
         Frame.Payload.AsMethod.CheckMethod( AMQP_CHANNEL_CLOSE_OK );
       Except
@@ -242,10 +248,14 @@ begin
   FMainQueue.Free;
   FMainQueue := TAMQPQueue.Create;
 
+  if FTCP.Connected then
+   FTCP.Disconnect;
   FTCP.Connect;
   FTCP.IOHandler.Write( AMQP_Header );
 
-  FThread.Free;
+  if Assigned(FThread) then
+    FThread.Free;
+
   FThread := TAMQPThread.Create( Self, FTCP, FMainQueue, FChannels, DumpMethod, DumpHeader, DumpFrame );
 
   Frame := ReadMethod( AMQP_CONNECTION_START );
@@ -451,6 +461,47 @@ begin
   End;
 end;
 
+procedure TAMQPConnection.AbortConnection;
+begin
+  if FTCP.Connected then
+  begin
+    FServerDisconnected := True;
+    CloseAllChannels;
+    FTCP.Disconnect;
+    FIsOpen:=False;
+  end;
+end;
+
+function TAMQPConnection.GetConnectUrl: String;
+begin
+  Result := format('amqp://%s:%s@%s:%d/%s?heartbeat=%d&timeout=%d',
+  [ FUsername, FPassword, FTCP.Host, FTCP.Port, FVirtualHost, FHeartbeatSecs, FTimeout] );
+end;
+
+procedure TAMQPConnection.SetConnectUrl(AValue: String);
+var Url: TURI;
+    Params: TStringList;
+begin
+ Url := ParseURI(AValue, 'amqp', 5672);
+ Host:=Url.Host;
+ Port:=Url.Port;
+ Username:=Url.Username;
+ Password:=Url.Password;
+ if Url.Document <> '' then
+  VirtualHost:=Url.Document
+ else
+  VirtualHost:='/';
+ Params := TStringList.Create;
+ try
+   Params.Delimiter:='&';
+   Params.DelimitedText:=Url.Params;
+   HeartbeatSecs:=StrToIntDef(Params.Values['heartbeat'], 180);
+   Timeout:=StrToIntDef(Params.Values['timeout'], 5000);
+ finally
+   Params.Free;
+ end;
+end;
+
 procedure TAMQPConnection.DumpHeader(ASendRecv: TSendRecv; AHeader: TAMQPHeader);
 var
   Strings: TStringList;
@@ -598,7 +649,7 @@ begin
   Method := TAMQPMethod.CreateMethod( AMQP_CHANNEL_OPEN );
   Try
     WriteMethod( Result.ID, Method );
-    Frame := Result.Queue.Get(FTimeout);
+    Frame := Result.Queue.Get(INFINITE);
     if (Frame.Payload.Name <> 'channel.open-ok') then
       ProtocolError( 'Expected channel.open-ok' );
     if (APrefetchSize > 0) or (APrefetchCount > 0) then
@@ -618,7 +669,7 @@ function TAMQPConnection.ReadFrame: IAMQPFrame;
 begin
   Result := nil;
   if ThreadRunning or (FMainQueue.Count > 0) then
-    Result := FMainQueue.Get(FTimeout);
+    Result := FMainQueue.Get(INFINITE);
 end;
 
 function TAMQPConnection.ReadMethod(AExpected: array of TAMQPMethodID): IAMQPFrame;
@@ -804,6 +855,11 @@ begin
   FDumpHeader  := ADumpHeader;
   FDumpFrame   := ADumpFrame;
   inherited Create(False);
+  {$IfDef UNIX}
+   _SetThreadName(Self.ThreadID, 'AMQPThread');
+  {$Else}
+   Self.NameThreadForDebugging('AMQPThread', Self.ThreadID);
+  {$EndIf}
 end;
 
 procedure TAMQPThread.Disconnect(E: Exception);

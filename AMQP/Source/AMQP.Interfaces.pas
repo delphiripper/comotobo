@@ -84,6 +84,7 @@ Type
     Procedure InternalDisconnect( CloseConnection: Boolean );
     Procedure ServerDisconnect( Msg: String );
     Procedure CloseChannel( Channel: IAMQPChannel );
+    procedure AbortConnection;
     property Timeout: LongWord read GetTimeOut;
   end;
 

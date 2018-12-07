@@ -33,6 +33,7 @@ Type
     Function AddXMessageTTL( TimeToLiveMS: Int64 ): TArguments;
     Function SetXQueueMode(AMode: TQueueMode): TArguments;
     Function AddXQueueMode(AMode: TQueueMode): TArguments;
+    procedure Clear;
   End;
 
 function MakeArgument( Name: String; Value: Variant): TArgument;
@@ -85,6 +86,11 @@ end;
 function TArgumentHelper.AddXQueueMode(AMode: TQueueMode): TArguments;
 begin
   Result := Self + SetXQueueMode(AMode);
+end;
+
+procedure TArgumentHelper.Clear;
+begin
+  SetLength(Self, 0);
 end;
 
 function TArgumentHelper.SetMessageTTL(TimeToLiveMS: Int64): TArguments;

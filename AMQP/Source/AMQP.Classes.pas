@@ -64,7 +64,7 @@ Type
     FQueue     : TQueue<T>;
   Public
     Function Count: Integer; Virtual;
-    Function Get(ATimeOut: LongWord): T; Virtual;
+    Function Get(ATimeOut: LongWord = {$IFDEF LINUX}0{$ELSE}INFINITE{$ENDIF}): T; Virtual;
     Procedure Put( Item: T ); Virtual;
 
     Constructor Create; Virtual;
@@ -75,7 +75,32 @@ Type
 
   TAMQPMessageQueue = TBlockingQueue<TAMQPMessage>;
 
+{$IfDef UNIX}
+  procedure _SetThreadName(AThreadId: QWord; AName: AnsiString);
+{$EndIf}
+
 implementation
+
+{$IfDef UNIX}
+uses
+  Unix,
+  pthreads,
+  ctypes,
+  unixtype;
+{$EndIf}
+
+{$IfDef UNIX}
+  function pthread_setname_np(thread:pthread_t; const name:PAnsiChar):integer;cdecl;external libthreads name 'pthread_setname_np';
+
+procedure _SetThreadName(AThreadId: QWord; AName: AnsiString);
+begin
+  pthread_setname_np(AThreadId, PAnsiChar(AName));
+end;
+
+{$EndIf}
+
+
+
 
 { TAMQPServerProperties }
 
@@ -192,7 +217,7 @@ begin
   inherited;
 end;
 
-function TBlockingQueue<T>.Get(ATimeOut: LongWord): T;
+function TBlockingQueue<T>.Get(ATimeOut: LongWord = {$IFDEF LINUX}0{$ELSE}INFINITE{$ENDIF}): T;
 begin
   {$IFDEF FPC}
   EnterCriticalSection(FGuard);

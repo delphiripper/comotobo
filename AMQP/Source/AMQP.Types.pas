@@ -368,7 +368,7 @@ begin
     varword: Result := Add(AName, tvardata(AValue).vword);
     varbyte: Result := Add(AName, tvardata(AValue).vbyte);
     varshortint: Result := Add(AName, tvardata(AValue).vshortint);
-    varstring, varustrarg:  Result := Add(AName, VarToStr(AValue));
+    varolestr, varstring, varustrarg, varUString:  Result := Add(AName, VarToStr(AValue));
     vardouble:  Result := Add(AName, tvardata(AValue).vdouble);
     varboolean:  Result := Add(AName, tvardata(AValue).vboolean);
   end;

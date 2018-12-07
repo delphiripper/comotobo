@@ -13,6 +13,7 @@ uses
   {$ifdef UNIX}
   BaseUnix,
   ctypes,
+  unixtype,
   {$EndIf}
   {$EndIf}
   syncobjs
@@ -28,7 +29,7 @@ type
     end;
     {$ELSE}
     {$IfDef UNIX}
-     TRTLConditionVariable = TRTLCriticalSection;
+     TRTLConditionVariable = pthread_cond_t;
      PRTLConditionVariable = ^TRTLConditionVariable;
     {$EndIf}
     {$ENDIF}
@@ -53,7 +54,7 @@ implementation
 type
     TInitializeConditionVariableProc = procedure (out ConditionVariable: TRTLConditionVariable); stdcall;
     TSleepConditionVariableCSProc = function (var ConditionVariable: TRTLConditionVariable; var CriticalSection: TRTLCriticalSection;
-       dwMilliseconds: {$IfDef Unix}ttimespec{$else}DWORD{$EndIf}): {$IfDef WINDOWS}BOOL{$Else}Boolean{$EndIf}; stdcall;
+       dwMilliseconds: {$IfDef Unix}ttimespec{$else}DWORD{$EndIf}): {$IfDef WINDOWS}BOOL{$Else}Integer{$EndIf}; stdcall;
     TWakeConditionVariableProc = procedure (var ConditionVariable: TRTLConditionVariable); stdcall;
     TWakeAllConditionVariableProc = procedure (var ConditionVariable: TRTLConditionVariable); stdcall;
 
@@ -79,7 +80,7 @@ var
   function pthread_cond_broadcast(__cond:PRTLConditionVariable):longint;cdecl;external;
   function pthread_cond_wait(__cond:PRTLConditionVariable; __mutex:PRTLCriticalSection):longint;cdecl;external;
   function pthread_cond_timedwait(__cond:PRTLConditionVariable; __mutex:PRTLCriticalSection; __abstime:ptimespec):longint;cdecl;external;
-
+  function clock_gettime(__clock_id: LongInt; __tp:Ptimespec):longint;cdecl;external;
 
   procedure InternalInitConditionVariable(out ConditionVariable: TRTLConditionVariable); stdcall;
   begin
@@ -91,9 +92,19 @@ var
    pthread_cond_signal(@ConditionVariable);
   end;
 
-  function InternalConditionVariableWait(var ConditionVariable: TRTLConditionVariable; var CriticalSection: TRTLCriticalSection; dwMilliseconds: ttimespec): Boolean; stdcall;
+  function InternalConditionVariableWait(var ConditionVariable: TRTLConditionVariable; var CriticalSection: TRTLCriticalSection; dwMilliseconds: ttimespec): Integer; stdcall;
+  var Err: Integer;
+      ctime: timespec;
   begin
-   Result := pthread_cond_timedwait(@ConditionVariable, @CriticalSection, @dwMilliseconds) = 0;
+   if (dwMilliseconds.tv_sec > 0) or (dwMilliseconds.tv_nsec > 0) then
+   begin
+     clock_gettime(0, @ctime);
+     ctime.tv_sec := ctime.tv_sec + dwMilliseconds.tv_sec;
+     ctime.tv_nsec:= ctime.tv_nsec + dwMilliseconds.tv_nsec;
+     Err := pthread_cond_timedwait(@ConditionVariable, @CriticalSection, @ctime);
+   end else
+     Err := pthread_cond_wait(@ConditionVariable, @CriticalSection);
+    Result := Err;
   end;
 
   procedure InternalConditionVariableBroadcast(var ConditionVariable: TRTLConditionVariable); stdcall;
@@ -148,6 +159,8 @@ function TConditionVariableCS.WaitForRTL(var CriticalSection: TRTLCriticalSectio
   TimeOut: LongWord): TWaitResult;
 var
   ltimeOut: {$IfDef UNIX}Ttimespec{$Else}LongWord{$EndIf};
+  lOsError: Integer;
+  lCondResult: {$IfDef UNIX}Integer{$Else}Boolean{$EndIf};
 begin
 {$IfDef UNIX}
  ltimeOut.tv_sec:=TimeOut div 1000;
@@ -155,12 +168,17 @@ begin
 {$Else}
  ltimeOut := TimeOut;
 {$EndIf}
- if SleepConditionVariableCSProc(FConditionVariable, CriticalSection, LTimeOut) then
+
+ lCondResult:= SleepConditionVariableCSProc(FConditionVariable, CriticalSection, LTimeOut);
+ if lCondResult{$IfDef UNIX} = 0{$EndIf} then
     Result := wrSignaled
  else
-   case GetLastOSError of
-     {$If Defined(WINDOWS)}ERROR_TIMEOUT{$ElseIf defined(UNIX)}ESysETIMEDOUT{$EndIf}: Result := wrTimeout;
-     {$If Defined(WINDOWS)}WAIT_ABANDONED: Result := wrAbandoned;{$EndIf}
+   begin
+    lOsError:= {$IfDef UNIX}lCondResult{$Else}GetLastOSError{$EndIf};
+     case lOsError of
+       {$If Defined(WINDOWS)}ERROR_TIMEOUT{$ElseIf defined(UNIX)}ESysETIMEDOUT{$EndIf}: Result := wrTimeout;
+       {$If Defined(WINDOWS)}WAIT_ABANDONED: Result := wrAbandoned;{$EndIf}
+     end;
    end;
 end;
 
