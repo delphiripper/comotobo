@@ -1,9 +1,10 @@
+{$I AMQP.Options.inc}  
 unit AMQP.MessageProperties;
 
 interface
 
 Uses
-  System.Classes, AMQP.Types, AMQP.IMessageProperties;
+  Classes, AMQP.Types, AMQP.IMessageProperties;
 
 Type
   TAMQPMessageProperties = class(TInterfacedObject, IAMQPMessageProperties)

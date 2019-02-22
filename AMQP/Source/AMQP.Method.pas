@@ -1,9 +1,9 @@
+{$I AMQP.Options.inc}
 unit AMQP.Method;
-
 interface
 
 Uses
-  System.Classes, System.Generics.Collections, AMQP.Types, AMQP.Payload, AMQP.Protocol;
+  Classes, Generics.Collections, AMQP.Types, AMQP.Payload, AMQP.Protocol;
 
 Type
   TAMQPMethod = Class(TAMQPPayload)
@@ -33,7 +33,7 @@ Type
 implementation
 
 Uses
-  System.Math, System.SysUtils, AMQP.Classes;
+  Math, SysUtils, AMQP.Classes;
 
 { TAMQPMethod }
 
@@ -144,8 +144,8 @@ begin
               Add( 'mechanism',         TShortString.Create( 'AMQPLAIN' ) );
               Add( 'response',          TFieldTable.Create );
               Add( 'locale',            TShortString.Create( 'en_US' ) );
-              Field[ 'client-properties' ].AsFieldTable.Add( 'library',         TLongString.Create( 'DelphiAMQP' ) );
-              Field[ 'client-properties' ].AsFieldTable.Add( 'library_version', TLongString.Create( '1.0' ) );
+              Field[ 'client-properties' ].AsFieldTable.Add( 'library',         TLongString.Create( 'Delphi/FPC-AMQP' ) );
+              Field[ 'client-properties' ].AsFieldTable.Add( 'library_version', TLongString.Create( '2.0' ) );
               Field[ 'response' ].AsFieldTable.Add( 'LOGIN',    TLongString.Create( '' ) );
               Field[ 'response' ].AsFieldTable.Add( 'PASSWORD', TLongString.Create( '' ) );
             End;
@@ -225,8 +225,8 @@ begin
               Add( 'type',       TShortString.Create( '' ) );
               Add( 'passive',    TBoolean.Create( False ) );
               Add( 'durable',    TBoolean.Create( False ) );
-              Add( 'reserved-2', TBoolean.Create( False ) );
-              Add( 'reserved-3', TBoolean.Create( False ) );
+              Add( 'autodelete', TBoolean.Create( False ) );
+              Add( 'internal',   TBoolean.Create( False ) );
               Add( 'no-wait',    TBoolean.Create( False ) );
               Add( 'arguments',  TFieldTable.Create );
             end;
@@ -235,13 +235,37 @@ begin
             End;
         20: Begin
               Name := 'exchange.delete';
-              Add( 'reserved-1', TShortUInt.Create( 0 ) );
+              Add( 'ticket', TShortUInt.Create( 0 ) );
               Add( 'exchange',   TShortString.Create( '' ) );
               Add( 'if-unused',  TBoolean.Create( False ) );
               Add( 'no-wait',    TBoolean.Create( False ) );
             end;
         21: Begin
               Name := 'exchange.delete-ok';
+            End;
+        30: begin
+              Name := 'exchange.bind';
+              Add( 'ticket',  TShortUInt.Create( 0 ) );
+              Add( 'destination', TShortString.Create( '' ) );
+              Add( 'source',      TShortString.Create( '' ) );
+              Add( 'routing-key', TShortString.Create( '' ));
+              Add( 'no-wait',     TBoolean.Create( False ) );
+              Add( 'arguments',   TFieldTable.Create);
+            End;
+        31: Begin
+              Name := 'exchange.bind-ok';
+            End;
+        40: begin
+              Name := 'exchange.unbind';
+              Add( 'reserved-1',  TShortUInt.Create( 0 ) );
+              Add( 'destination', TShortString.Create( '' ) );
+              Add( 'source',      TShortString.Create( '' ) );
+              Add( 'routing-key', TShortString.Create( '' ));
+              Add( 'no-wait',     TBoolean.Create( False ) );
+              Add( 'arguments',   TFieldTable.Create);
+            End;
+        51: Begin
+              Name := 'exchange.unbind-ok';
             End;
         Else
           raise AMQPException.CreateFmt('Unsupported method: ClassID %d, MethodID %d', [ClassID, MethodID]);
@@ -250,7 +274,7 @@ begin
       case AMethodID of
         10: Begin
               Name := 'queue.declare';
-              Add( 'reserved-1',  TShortUInt.Create( 0 ) );
+              Add( 'ticket',  TShortUInt.Create( 0 ) );
               Add( 'queue',       TShortString.Create( '' ) );
               Add( 'passive',     TBoolean.Create( False ) );
               Add( 'durable',     TBoolean.Create( False ) );
@@ -267,7 +291,7 @@ begin
             End;
         20: Begin
               Name := 'queue.bind';
-              Add( 'reserved-1',  TShortUInt.Create( 0 ) );
+              Add( 'ticket',  TShortUInt.Create( 0 ) );
               Add( 'queue',       TShortString.Create( '' ) );
               Add( 'exchange',    TShortString.Create( '' ) );
               Add( 'routing-key', TShortString.Create( '' ) );
@@ -279,7 +303,7 @@ begin
             End;
         30: Begin
               Name := 'queue.purge';
-              Add( 'reserved-1',  TShortUInt.Create( 0 ) );
+              Add( 'ticket',  TShortUInt.Create( 0 ) );
               Add( 'queue',       TShortString.Create( '' ) );
               Add( 'no-wait',     TBoolean.Create( False ) );
             end;
@@ -288,7 +312,7 @@ begin
             End;
         40: Begin
               Name := 'queue.delete';
-              Add( 'reserved-1',  TShortUInt.Create( 0 ) );
+              Add( 'ticket',  TShortUInt.Create( 0 ) );
               Add( 'queue',       TShortString.Create( '' ) );
               Add( 'if-unused',   TBoolean.Create( False ) );
               Add( 'if-empty',    TBoolean.Create( False ) );
@@ -300,7 +324,7 @@ begin
             End;
         50: Begin
               Name := 'queue.unbind';
-              Add( 'reserved-1',  TShortUInt.Create( 0 ) );
+              Add( 'ticket',  TShortUInt.Create( 0 ) );
               Add( 'queue',       TShortString.Create( '' ) );
               Add( 'exchange',    TShortString.Create( '' ) );
               Add( 'routing-key', TShortString.Create( '' ) );
@@ -314,9 +338,18 @@ begin
       end;
     AMQP_CLASS_BASIC:
       case AMethodID of
+        10: Begin
+              Name := 'basic.qos';
+              Add('prefetch-size', TLongUInt.Create(0));
+              Add('prefetch-count', TShortUInt.Create(0));
+              Add('global', TBoolean.Create(False));
+            End;
+        11: begin
+              Name := 'basic.qos-ok';
+            end;
         20: Begin
               Name := 'basic.consume';
-              Add( 'reserved-1',   TShortUInt.Create( 0 ) );
+              Add( 'ticket',   TShortUInt.Create( 0 ) );
               Add( 'queue',        TShortString.Create( '' ) );
               Add( 'consumer-tag', TShortString.Create( '' ) );
               Add( 'no-local',     TBoolean.Create( False ) );

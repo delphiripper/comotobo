@@ -1,3 +1,6 @@
+// JCL_DEBUG_EXPERT_GENERATEJDBG OFF
+// JCL_DEBUG_EXPERT_INSERTJDBG OFF
+// JCL_DEBUG_EXPERT_DELETEMAPFILE OFF
 program Sample1Tests;
 
 {$IFDEF CONSOLE_TESTRUNNER}
@@ -5,7 +8,6 @@ program Sample1Tests;
 {$ENDIF}
 
 uses
-  FastMM4,
   DUnitTestRunner,
   TestJSON in 'TestJSON.pas',
   DJSON in '..\DJSON.pas',

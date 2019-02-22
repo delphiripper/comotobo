@@ -15,3 +15,15 @@ AMQP/Samples/Testbench/__history/
 EasyDelphiQ/__history/
 EasyDelphiQ/Testbench/__history
 EasyDelphiQ/Testbench/Win32
+/AMQP/Source/backup
+/MassTransitMsg/__history
+/MassTransitMsg/sb_masstransitmsg.pas
+/fpc/lib/aarch64-linux/*.o
+/fpc/lib/aarch64-linux/*.ppu
+/fpc/lib/aarch64-linux/*.rsj
+*.compiled
+*.o
+*.ppu
+*.rsj
+*.or
+*.res

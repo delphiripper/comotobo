@@ -52,6 +52,11 @@ type
     Button2: TButton;
     Button3: TButton;
     Button4: TButton;
+    btn1: TButton;
+    btn2: TButton;
+    btn3: TButton;
+    btn4: TButton;
+    btn5: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure ButtonConnectClick(Sender: TObject);
@@ -81,6 +86,11 @@ type
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
+    procedure btn1Click(Sender: TObject);
+    procedure btn2Click(Sender: TObject);
+    procedure btn3Click(Sender: TObject);
+    procedure btn4Click(Sender: TObject);
+    procedure btn5Click(Sender: TObject);
   private
     AMQP: TAMQPConnection;
     Channel: IAMQPChannel;
@@ -105,7 +115,7 @@ var
 implementation
 
 Uses
-  AMQP.Message, AMQP.StreamHelper, AMQP.Arguments;
+  AMQP.Message, AMQP.StreamHelper, AMQP.Arguments, AMQP.IMessageProperties, AMQP.MessageProperties, AMQP.Types;
 
 {$R *.dfm}
 
@@ -139,6 +149,41 @@ begin
   Finally
     DebugLock.Release;
   End;
+end;
+
+procedure TTestbenchForm.btn1Click(Sender: TObject);
+begin
+  Channel.ExchangeDeclare( 'Exchange1', etTopic);
+end;
+
+procedure TTestbenchForm.btn2Click(Sender: TObject);
+begin
+  Channel.ExchangeDeclare( 'Exchange2', etTopic );
+end;
+
+procedure TTestbenchForm.btn3Click(Sender: TObject);
+begin
+ Channel.ExchangeBind('Exchange2', 'Exchange1', 'color.#');
+ Channel.ExchangeBind('Colors', 'Exchange2', 'color.red');
+end;
+
+procedure TTestbenchForm.btn4Click(Sender: TObject);
+begin
+ Channel.ExchangeUnBind('Colors', 'Exchange2', 'color.red');
+end;
+
+procedure TTestbenchForm.btn5Click(Sender: TObject);
+var Prop: IAMQPMessageProperties;
+begin
+  if Channel = nil then
+    raise Exception.Create('Channel not open');
+  Prop := TAMQPMessageProperties.Create('TestBench');
+  Prop.ApplicationHeaders.Add('Field1', TShortShortInt.Create(100));
+  Prop.ApplicationHeaders.Add('Field2', TDouble.Create(1021.12));
+  Prop.ApplicationHeaders.Add('Field3', TLongString.Create('Test'));
+  Prop.ApplicationHeaders.Add('Field4', TFieldArray.Create.Add('1').Add(2).Add(1921.281));
+  Prop.Priority.Value := 220;
+  Channel.BasicPublish( 'Exchange1', 'color.red', 'Magenta is the word!', False, Prop);
 end;
 
 procedure TTestbenchForm.ButtonGetBlueClick(Sender: TObject);
@@ -393,11 +438,11 @@ end;
 
 procedure TTestbenchForm.ButtonConnectClick(Sender: TObject);
 begin
-  AMQP.Host          := 'localhost';
+  AMQP.Host          := '172.17.251.111';
   AMQP.Port          := 5672;
-  AMQP.VirtualHost   := '/';
-  AMQP.Username      := 'TestUser';
-  AMQP.Password      := 'password';
+  AMQP.VirtualHost   := 'vtc';
+  AMQP.Username      := 'vtc_test';
+  AMQP.Password      := 'vtc_test';
   AMQP.ApplicationID := 'Testbench';
   AMQP.MaxFrameSize  := 4096;
   AMQP.Connect;
@@ -430,6 +475,7 @@ begin
   DebugLock   := TCriticalSection.Create;
   AMQP := TAMQPConnection.Create;
   AMQP.HeartbeatSecs := 120;
+  AMQP.Timeout := 5000;
   AMQP.OnWireDebug   := AMQPWireEvent;
   AMQP.OnDebug       := AMQPDebugEvent;
   Channel := nil;
@@ -487,7 +533,7 @@ begin
   WriteLine( 'Thread starting', False );
   NameThreadForDebugging( 'ConsumerThread' );
   Repeat
-    Msg := FQueue.Get;
+    Msg := FQueue.Get(INFINITE);
     if Msg = nil then
       Terminate;
     if not Terminated then

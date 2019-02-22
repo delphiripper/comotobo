@@ -45,9 +45,9 @@ object TestbenchForm: TTestbenchForm
   end
   object MemoSent: TMemo
     Left = 8
-    Top = 104
+    Top = 160
     Width = 401
-    Height = 520
+    Height = 464
     Anchors = [akLeft, akTop, akBottom]
     Ctl3D = False
     Font.Charset = DEFAULT_CHARSET
@@ -62,9 +62,9 @@ object TestbenchForm: TTestbenchForm
   end
   object MemoReceived: TMemo
     Left = 617
-    Top = 104
+    Top = 160
     Width = 401
-    Height = 520
+    Height = 464
     Anchors = [akLeft, akTop, akRight, akBottom]
     Ctl3D = False
     Font.Charset = DEFAULT_CHARSET
@@ -79,9 +79,9 @@ object TestbenchForm: TTestbenchForm
   end
   object MemoSentBytes: TMemo
     Left = 415
-    Top = 104
+    Top = 160
     Width = 196
-    Height = 519
+    Height = 463
     Anchors = [akLeft, akTop, akBottom]
     Color = clGreen
     Ctl3D = False
@@ -132,8 +132,8 @@ object TestbenchForm: TTestbenchForm
     OnClick = ButtonPublishRedClick
   end
   object ButtonOpenChannel: TButton
-    Left = 95
-    Top = 8
+    Left = 89
+    Top = 9
     Width = 90
     Height = 25
     Caption = 'Open Channel'
@@ -141,7 +141,7 @@ object TestbenchForm: TTestbenchForm
     OnClick = ButtonOpenChannelClick
   end
   object ButtonCloseChannel: TButton
-    Left = 95
+    Left = 89
     Top = 40
     Width = 90
     Height = 25
@@ -150,8 +150,8 @@ object TestbenchForm: TTestbenchForm
     OnClick = ButtonCloseChannelClick
   end
   object ButtonExchangeDeclare: TButton
-    Left = 199
-    Top = 8
+    Left = 185
+    Top = 9
     Width = 106
     Height = 25
     Caption = 'Declare Exchange'
@@ -159,8 +159,8 @@ object TestbenchForm: TTestbenchForm
     OnClick = ButtonExchangeDeclareClick
   end
   object ButtonExchangeDelete: TButton
-    Left = 199
-    Top = 40
+    Left = 185
+    Top = 39
     Width = 106
     Height = 25
     Caption = 'Delete Exchange'
@@ -168,18 +168,18 @@ object TestbenchForm: TTestbenchForm
     OnClick = ButtonExchangeDeleteClick
   end
   object ButtonQueueDeclare: TButton
-    Left = 322
+    Left = 297
     Top = 8
-    Width = 87
+    Width = 103
     Height = 25
     Caption = 'Declare Queue'
     TabOrder = 12
     OnClick = ButtonQueueDeclareClick
   end
   object ButtonQueueDelete: TButton
-    Left = 322
-    Top = 39
-    Width = 87
+    Left = 297
+    Top = 42
+    Width = 103
     Height = 25
     Caption = 'Delete Queue'
     TabOrder = 13
@@ -314,7 +314,7 @@ object TestbenchForm: TTestbenchForm
     OnClick = ButtonCancelRedClick
   end
   object ButtonBigExchange: TButton
-    Left = 199
+    Left = 185
     Top = 71
     Width = 106
     Height = 25
@@ -323,9 +323,9 @@ object TestbenchForm: TTestbenchForm
     OnClick = ButtonBigExchangeClick
   end
   object Button1: TButton
-    Left = 322
-    Top = 70
-    Width = 87
+    Left = 297
+    Top = 73
+    Width = 103
     Height = 25
     Caption = 'Declare Big Queue'
     TabOrder = 28
@@ -357,6 +357,51 @@ object TestbenchForm: TTestbenchForm
     Caption = 'Get big'
     TabOrder = 31
     OnClick = Button4Click
+  end
+  object btn1: TButton
+    Left = 185
+    Top = 102
+    Width = 106
+    Height = 25
+    Caption = 'Declare Exchange 1'
+    TabOrder = 32
+    OnClick = btn1Click
+  end
+  object btn2: TButton
+    Left = 297
+    Top = 102
+    Width = 103
+    Height = 25
+    Caption = 'Declare Exchange 2'
+    TabOrder = 33
+    OnClick = btn2Click
+  end
+  object btn3: TButton
+    Left = 415
+    Top = 102
+    Width = 82
+    Height = 25
+    Caption = 'Bind Exchange'
+    TabOrder = 34
+    OnClick = btn3Click
+  end
+  object btn4: TButton
+    Left = 344
+    Top = 132
+    Width = 153
+    Height = 25
+    Caption = 'Unbind Color from Exchange2'
+    TabOrder = 35
+    OnClick = btn4Click
+  end
+  object btn5: TButton
+    Left = 536
+    Top = 102
+    Width = 139
+    Height = 25
+    Caption = 'Publish Red To Exchange 1'
+    TabOrder = 36
+    OnClick = btn5Click
   end
   object Timer1: TTimer
     Interval = 200

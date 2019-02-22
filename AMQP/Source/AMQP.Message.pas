@@ -1,9 +1,10 @@
+{$I AMQP.Options.inc}
 unit AMQP.Message;
 
 interface
 
 Uses
-  System.Classes, AMQP.Header, AMQP.Frame;
+  Classes, AMQP.Header, AMQP.Frame;
 
 Type
   IAMQPBaseChannel = interface ['{A5198398-B9DC-461B-8ECF-69A0BD0AD49E}']
@@ -44,7 +45,7 @@ Type
 implementation
 
 Uses
-  System.SysUtils, AMQP.Method, AMQP.Helper;
+  SysUtils, AMQP.Method, AMQP.Helper;
 
 { TAMQPMessage }
 

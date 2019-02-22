@@ -11,6 +11,7 @@
 //---------------------------------------------------------------------------
 // JCL_DEBUG_EXPERT_GENERATEJDBG OFF
 // JCL_DEBUG_EXPERT_INSERTJDBG OFF
+// JCL_DEBUG_EXPERT_DELETEMAPFILE OFF
 package JSONDTOWiz;
 
 {$R *.res}
@@ -18,7 +19,7 @@ package JSONDTOWiz;
 {$ALIGN 8}
 {$ASSERTIONS ON}
 {$BOOLEVAL OFF}
-{$DEBUGINFO ON}
+{$DEBUGINFO OFF}
 {$EXTENDEDSYNTAX ON}
 {$IMPORTEDDATA ON}
 {$IOCHECKS ON}
@@ -54,6 +55,7 @@ contains
   WizardWin in 'WizardWin.pas' {WizardForm},
   JSON2DTO in '..\JSON2DTO.pas',
   WinHttp_TLB in '..\WinHttp_TLB.pas',
-  JSON in '..\JSON.pas';
+  JSON in '..\JSON.pas',
+  DJSON in '..\DJSON.pas';
 
 end.

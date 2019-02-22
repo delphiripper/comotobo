@@ -2,7 +2,7 @@ object ThreadSampleForm: TThreadSampleForm
   Left = 0
   Top = 0
   Caption = 'Thread sample'
-  ClientHeight = 433
+  ClientHeight = 441
   ClientWidth = 789
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -15,7 +15,7 @@ object ThreadSampleForm: TThreadSampleForm
   OnShow = FormShow
   DesignSize = (
     789
-    433)
+    441)
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
@@ -36,7 +36,7 @@ object ThreadSampleForm: TThreadSampleForm
     Left = 537
     Top = 72
     Width = 244
-    Height = 353
+    Height = 361
     Anchors = [akTop, akRight, akBottom]
     ScrollBars = ssBoth
     TabOrder = 0
@@ -45,7 +45,7 @@ object ThreadSampleForm: TThreadSampleForm
     Left = 8
     Top = 72
     Width = 244
-    Height = 353
+    Height = 361
     Anchors = [akLeft, akTop, akBottom]
     ScrollBars = ssBoth
     TabOrder = 1
@@ -112,7 +112,7 @@ object ThreadSampleForm: TThreadSampleForm
     Left = 287
     Top = 72
     Width = 244
-    Height = 353
+    Height = 361
     Anchors = [akTop, akRight, akBottom]
     ScrollBars = ssBoth
     TabOrder = 8
